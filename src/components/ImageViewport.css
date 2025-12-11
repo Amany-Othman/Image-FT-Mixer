@@ -1,0 +1,163 @@
+.image-viewport {
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.viewport-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #eee;
+}
+
+.viewport-header h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #333;
+    font-weight: 600;
+}
+
+.dimensions {
+    font-size: 12px;
+    color: #666;
+    background: #f0f0f0;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+/* Display sections */
+.display-section {
+    margin-bottom: 20px;
+}
+
+.display-section h4 {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    color: #555;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+/* Component selector dropdown */
+.component-selector {
+    padding: 6px 12px;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    background: white;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 500;
+}
+
+.component-selector:hover:not(:disabled) {
+    border-color: #667eea;
+}
+
+.component-selector:disabled {
+    background: #f5f5f5;
+    cursor: not-allowed;
+    color: #999;
+}
+
+.component-selector:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* Canvas containers */
+.canvas-container {
+    position: relative;
+    min-height: 200px;
+    background: #f9f9f9;
+    border: 2px dashed #ddd;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.canvas-container:hover {
+    border-color: #667eea;
+    background: #f0f4ff;
+}
+
+.component-canvas {
+    cursor: default;
+    background: #fafafa;
+}
+
+.component-canvas:hover {
+    border-color: #ddd;
+    background: #fafafa;
+}
+
+.placeholder {
+    text-align: center;
+    color: #999;
+    padding: 40px 20px;
+    position: absolute;
+}
+
+.placeholder p {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+canvas {
+    max-width: 100%;
+    max-height: 300px;
+    display: block;
+    image-rendering: pixelated;
+}
+
+/* Controls */
+.viewport-controls {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+
+.viewport-controls button {
+    flex: 1;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+}
+
+.viewport-controls button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.4);
+}
+
+.viewport-controls button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+}

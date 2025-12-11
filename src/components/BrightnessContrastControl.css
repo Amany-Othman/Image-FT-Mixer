@@ -1,0 +1,102 @@
+.brightness-contrast-control {
+    margin-top: 10px;
+}
+
+.control-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #666;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.drag-area {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 6px;
+    padding: 12px;
+    cursor: grab;
+    user-select: none;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+    position: relative;
+}
+
+.drag-area:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.4);
+}
+
+.drag-area.dragging {
+    cursor: grabbing;
+    background: linear-gradient(135deg, #5568d3 0%, #653a8b 100%);
+    box-shadow: 0 6px 12px rgba(102, 126, 234, 0.5);
+}
+
+.drag-instructions {
+    text-align: center;
+    color: white;
+    font-size: 11px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    opacity: 0.9;
+    letter-spacing: 0.5px;
+}
+
+.values-display {
+    display: flex;
+    justify-content: space-around;
+    gap: 15px;
+}
+
+.value-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 6px 12px;
+    border-radius: 4px;
+    backdrop-filter: blur(10px);
+}
+
+.value-label {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.value-number {
+    color: white;
+    font-size: 14px;
+    font-weight: 700;
+    min-width: 30px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.reset-button {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(255, 255, 255, 0.3);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    backdrop-filter: blur(5px);
+}
+
+.reset-button:hover {
+    background: rgba(255, 255, 255, 0.4);
+    border-color: rgba(255, 255, 255, 0.7);
+}
+
+.reset-button:active {
+    transform: scale(0.95);
+}
