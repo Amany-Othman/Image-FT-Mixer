@@ -1,11 +1,11 @@
-// ImageViewport.jsx - With brightness/contrast control
+// ImageViewport.jsx - Stage 6: FIXED with Region Rectangle Visualization
 
 import React, { useState, useRef, useEffect } from "react";
 import ImageProcessor from "../classes/ImageProcessor";
 import BrightnessContrastControl from "./BrightnessContrastControl";
 import "./ImageViewport.css";
 
-function ImageViewport({ id, onImageLoaded, targetSize }) {
+function ImageViewport({ id, onImageLoaded, targetSize, regionConfig }) {
   const [hasImage, setHasImage] = useState(false);
   const [imageDimensions, setImageDimensions] = useState(null);
   const [selectedComponent, setSelectedComponent] = useState("magnitude");
@@ -107,6 +107,67 @@ function ImageViewport({ id, onImageLoaded, targetSize }) {
     }
 
     ctx.putImageData(imageData, 0, 0);
+
+    // NEW: Draw region rectangle if enabled
+    drawRegionRectangle(ctx, canvas.width, canvas.height);
+  };
+  
+
+  // NEW: Draw region selection rectangle on FFT canvas
+  const drawRegionRectangle = (ctx, width, height) => {
+    console.log('drawRegionRectangle called with regionConfig:', regionConfig);
+  
+  if (!regionConfig || !regionConfig.enabled) {
+    console.log('Region not enabled, skipping draw');
+    return;
+  }
+  
+  console.log('Drawing rectangle!', { width, height, size: regionConfig.size, type: regionConfig.type });
+    if (!regionConfig || !regionConfig.enabled) return;
+
+    const centerX = width / 2;
+    const centerY = height / 2;
+
+    // Calculate rectangle dimensions based on region size percentage
+    const rectWidth = (width * regionConfig.size) / 100;
+    const rectHeight = (height * regionConfig.size) / 100;
+
+    const x = centerX - rectWidth / 2;
+    const y = centerY - rectHeight / 2;
+
+    // Set style based on region type
+    if (regionConfig.type === 'inner') {
+      ctx.strokeStyle = '#00ff00'; // Green for inner (low frequencies)
+      ctx.fillStyle = 'rgba(0, 255, 0, 0.1)'; // Semi-transparent green fill
+    } else {
+      ctx.strokeStyle = '#ff0000'; // Red for outer (high frequencies)
+      ctx.fillStyle = 'rgba(255, 0, 0, 0.1)'; // Semi-transparent red fill
+    }
+
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 5]); // Dashed line
+
+    // Draw filled rectangle (semi-transparent overlay)
+    ctx.fillRect(x, y, rectWidth, rectHeight);
+
+    // Draw rectangle border
+    ctx.strokeRect(x, y, rectWidth, rectHeight);
+
+    // Reset line dash
+    ctx.setLineDash([]);
+
+    // Draw center marker (DC component)
+    ctx.fillStyle = regionConfig.type === 'inner' ? '#00ff00' : '#ff0000';
+    ctx.fillRect(centerX - 2, centerY - 2, 4, 4);
+
+    // Draw size label
+    ctx.fillStyle = regionConfig.type === 'inner' ? '#00ff00' : '#ff0000';
+    ctx.font = 'bold 12px Arial';
+    ctx.fillText(
+      `${regionConfig.type.toUpperCase()} ${regionConfig.size}%`,
+      10,
+      height - 10
+    );
   };
 
   const handleComponentChange = (event) => {
@@ -125,14 +186,15 @@ function ImageViewport({ id, onImageLoaded, targetSize }) {
     setComponentAdjustments({ brightness, contrast });
   };
 
-  // Redraw component when adjustments or selection changes
+  // Redraw component when adjustments, selection, or REGION CONFIG changes
   useEffect(() => {
     if (processor.hasFFT()) {
       drawComponent();
     }
-  }, [selectedComponent, componentAdjustments]);
+  }, [selectedComponent, componentAdjustments, regionConfig]); // Added regionConfig dependency
 
   useEffect(() => {
+    console.log('ImageViewport received regionConfig:', regionConfig);
     if (targetSize && processor.hasImage()) {
       processor.resize(targetSize.width, targetSize.height);
 
@@ -225,12 +287,23 @@ function ImageViewport({ id, onImageLoaded, targetSize }) {
         </div>
 
         {processor.hasFFT() && (
-          <BrightnessContrastControl
-            label="Component Adjustments"
-            brightness={componentAdjustments.brightness}
-            contrast={componentAdjustments.contrast}
-            onAdjust={handleComponentAdjustment}
-          />
+          <>
+            <BrightnessContrastControl
+              label="Component Adjustments"
+              brightness={componentAdjustments.brightness}
+              contrast={componentAdjustments.contrast}
+              onAdjust={handleComponentAdjustment}
+            />
+            
+            {/* NEW: Region selection indicator */}
+            {regionConfig && regionConfig.enabled && (
+              <div className="region-indicator">
+                <span className={`region-badge ${regionConfig.type}`}>
+                  {regionConfig.type === 'inner' ? '📍 INNER' : '🌐 OUTER'} {regionConfig.size}%
+                </span>
+              </div>
+            )}
+          </>
         )}
       </div>
 

@@ -1,11 +1,13 @@
-// ComponentMixer.jsx - UI for mixing FFT components
+// ComponentMixer.jsx - Stage 6: FIXED with Region Config Exposure
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import RegionSelector from "./RegionSelector";
 import "./ComponentMixer.css";
 
-function ComponentMixer({ processors, onMix }) {
+function ComponentMixer({ processors, onMix, onRegionConfigChange }) {
   const [mixMode, setMixMode] = useState("magnitude-phase");
   const [weights, setWeights] = useState([0.25, 0.25, 0.25, 0.25]);
+  const [regionConfig, setRegionConfig] = useState(null);
   const [isMixing, setIsMixing] = useState(false);
 
   // Check how many images have FFT
@@ -24,6 +26,17 @@ function ComponentMixer({ processors, onMix }) {
     setMixMode(event.target.value);
   };
 
+  // NEW: Handle region selection change and notify parent
+  const handleRegionChange = (config) => {
+    setRegionConfig(config);
+    console.log('Region config updated:', config);
+    
+    // Notify parent (App.js) so it can pass to ImageViewports
+    if (onRegionConfigChange) {
+      onRegionConfigChange(config);
+    }
+  };
+
   // Handle mix button click
   const handleMixClick = async () => {
     if (!canMix) return;
@@ -33,7 +46,8 @@ function ComponentMixer({ processors, onMix }) {
     // Use setTimeout to allow UI to update
     setTimeout(() => {
       try {
-        onMix(availableProcessors, weights, mixMode);
+        // Pass regionConfig to onMix
+        onMix(availableProcessors, weights, mixMode, regionConfig);
       } catch (error) {
         console.error("Error mixing:", error);
         alert("Error during mixing: " + error.message);
@@ -52,7 +66,6 @@ function ComponentMixer({ processors, onMix }) {
   const normalizeWeights = () => {
     const sum = weights.reduce((a, b) => a + b, 0);
     if (sum === 0) return;
-
     const normalized = weights.map((w) => w / sum);
     setWeights(normalized);
   };
@@ -99,6 +112,11 @@ function ComponentMixer({ processors, onMix }) {
             </div>
           </div>
 
+          {/* Region Selection */}
+          <div className="mixer-section">
+            <RegionSelector onRegionChange={handleRegionChange} />
+          </div>
+
           {/* Weight Sliders */}
           <div className="mixer-section">
             <div className="section-header-row">
@@ -123,7 +141,6 @@ function ComponentMixer({ processors, onMix }) {
             <div className="weights-grid">
               {[0, 1, 2, 3].map((index) => {
                 const hasFFT = processors[index] && processors[index].hasFFT();
-
                 return (
                   <div
                     key={index}

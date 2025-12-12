@@ -1,4 +1,4 @@
-// App.js - Stage 5: Two Output Viewports
+// App.js - Stage 6: FIXED with Region Rectangle Visualization
 
 import React, { useState } from 'react';
 import ImageViewport from './components/ImageViewport';
@@ -12,8 +12,9 @@ function App() {
   const [targetSize, setTargetSize] = useState(null);
   const [outputData1, setOutputData1] = useState(null);
   const [outputData2, setOutputData2] = useState(null);
-  const [selectedOutput, setSelectedOutput] = useState(1); // NEW: Which output to use
+  const [selectedOutput, setSelectedOutput] = useState(1);
   const [updateTrigger, setUpdateTrigger] = useState(0);
+  const [regionConfig, setRegionConfig] = useState(null); // NEW: Store region config
 
   const handleImageLoaded = (viewportId, processor) => {
     const newLoadedImages = {
@@ -45,13 +46,20 @@ function App() {
     setTargetSize({ width: minWidth, height: minHeight });
   };
 
-  // Handle mixing - route to selected output
-  const handleMix = (processors, weights, mixMode) => {
+  // NEW: Handle region config changes from ComponentMixer
+  const handleRegionConfigChange = (config) => {
+    setRegionConfig(config);
+    console.log('App: Region config updated:', config);
+  };
+
+  // Handle mixing with regionConfig parameter
+  const handleMix = (processors, weights, mixMode, regionConfig) => {
     try {
       console.log('Starting mix with:', {
         processorCount: processors.length,
         weights,
         mixMode,
+        regionConfig,
         targetOutput: selectedOutput
       });
 
@@ -59,6 +67,7 @@ function App() {
       mixer.setProcessors(processors);
       mixer.setWeights(weights);
       mixer.setMixMode(mixMode);
+      mixer.setRegionConfig(regionConfig);
 
       const result = mixer.mix();
       
@@ -98,7 +107,7 @@ function App() {
       </header>
 
       <main className="main-content">
-        {/* Input Viewports */}
+        {/* Input Viewports - NOW WITH REGION CONFIG */}
         <section className="section">
           <h2 className="section-title">Input Images</h2>
           <div className="viewports-grid">
@@ -106,21 +115,25 @@ function App() {
               id="1" 
               onImageLoaded={handleImageLoaded}
               targetSize={targetSize}
+              regionConfig={regionConfig}
             />
             <ImageViewport 
               id="2" 
               onImageLoaded={handleImageLoaded}
               targetSize={targetSize}
+              regionConfig={regionConfig}
             />
             <ImageViewport 
               id="3" 
               onImageLoaded={handleImageLoaded}
               targetSize={targetSize}
+              regionConfig={regionConfig}
             />
             <ImageViewport 
               id="4" 
               onImageLoaded={handleImageLoaded}
               targetSize={targetSize}
+              regionConfig={regionConfig}
             />
           </div>
 
@@ -135,7 +148,7 @@ function App() {
         <section className="section">
           <h2 className="section-title">Mixer Controls</h2>
           
-          {/* NEW: Output Selection */}
+          {/* Output Selection */}
           <div className="output-selector">
             <label className="output-selector-label">
               <strong>Send Result To:</strong>
@@ -159,6 +172,7 @@ function App() {
           <ComponentMixer 
             processors={getProcessorsArray()}
             onMix={handleMix}
+            onRegionConfigChange={handleRegionConfigChange}
             key={updateTrigger}
           />
         </section>

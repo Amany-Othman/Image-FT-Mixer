@@ -7,6 +7,7 @@ class FourierMixer {
     this.processors = [];
     this.mixMode = 'magnitude-phase';
     this.weights = [0.25, 0.25, 0.25, 0.25];
+    this.regionConfig = null; // NEW: Region selection config
   }
 
   setProcessors(processors) {
@@ -27,6 +28,12 @@ class FourierMixer {
       this.weights = weights.map(w => w / sum);
     }
     console.log('Normalized weights:', this.weights);
+  }
+
+  // NEW: Set region selection configuration
+  setRegionConfig(config) {
+    this.regionConfig = config;
+    console.log('Region config:', config);
   }
 
   mix() {
@@ -64,16 +71,29 @@ class FourierMixer {
     };
   }
 
-  // FIXED: Mix using magnitude and phase
+  // FIXED: Mix using magnitude and phase with optional region selection
   mixMagnitudePhase(fftWidth, fftHeight) {
     const size = fftWidth * fftHeight;
     const mixedComplex = new Float64Array(size * 2);
 
     console.log('Mixing Magnitude/Phase mode');
 
+    // Create region mask if enabled
+    const regionMask = this.regionConfig && this.regionConfig.enabled
+      ? this.createRegionMask(fftWidth, fftHeight)
+      : null;
+
     for (let i = 0; i < size; i++) {
+      // Check if this frequency should be included
+      if (regionMask && !regionMask[i]) {
+        // Outside selected region - set to zero
+        mixedComplex[i * 2] = 0;
+        mixedComplex[i * 2 + 1] = 0;
+        continue;
+      }
+
       let mixedMagnitude = 0;
-      let sumCosPhase = 0; // For circular mean of phases
+      let sumCosPhase = 0;
       let sumSinPhase = 0;
 
       // Weighted sum of magnitude and CIRCULAR mean of phase
@@ -86,22 +106,16 @@ class FourierMixer {
         const real = fft.complexData[i * 2];
         const imag = fft.complexData[i * 2 + 1];
 
-        // Calculate magnitude and phase
         const magnitude = Math.sqrt(real * real + imag * imag);
         const phase = Math.atan2(imag, real);
 
-        // Weighted sum of magnitude (simple average)
         mixedMagnitude += magnitude * weight;
-        
-        // Circular mean for phase (convert to unit vector)
         sumCosPhase += Math.cos(phase) * weight;
         sumSinPhase += Math.sin(phase) * weight;
       }
 
-      // Get mixed phase from circular mean
       const mixedPhase = Math.atan2(sumSinPhase, sumCosPhase);
 
-      // Convert back to complex: magnitude * e^(i*phase)
       const real = mixedMagnitude * Math.cos(mixedPhase);
       const imag = mixedMagnitude * Math.sin(mixedPhase);
 
@@ -112,18 +126,29 @@ class FourierMixer {
     return mixedComplex;
   }
 
-  // FIXED: Mix using real and imaginary
+  // FIXED: Mix using real and imaginary with optional region selection
   mixRealImaginary(fftWidth, fftHeight) {
     const size = fftWidth * fftHeight;
     const mixedComplex = new Float64Array(size * 2);
 
     console.log('Mixing Real/Imaginary mode');
 
+    // Create region mask if enabled
+    const regionMask = this.regionConfig && this.regionConfig.enabled
+      ? this.createRegionMask(fftWidth, fftHeight)
+      : null;
+
     for (let i = 0; i < size; i++) {
+      // Check if this frequency should be included
+      if (regionMask && !regionMask[i]) {
+        mixedComplex[i * 2] = 0;
+        mixedComplex[i * 2 + 1] = 0;
+        continue;
+      }
+
       let mixedReal = 0;
       let mixedImag = 0;
 
-      // Simple weighted sum (weights already normalized)
       for (let j = 0; j < this.processors.length; j++) {
         const fft = this.processors[j].fft;
         const weight = this.weights[j];
@@ -139,6 +164,47 @@ class FourierMixer {
     }
 
     return mixedComplex;
+  }
+
+  // NEW: Create mask for region selection
+  createRegionMask(width, height) {
+    const mask = new Uint8Array(width * height);
+    const centerX = Math.floor(width / 2);
+    const centerY = Math.floor(height / 2);
+    
+    // Calculate region size in pixels
+    const regionPercent = this.regionConfig.size / 100;
+    const regionWidth = Math.floor(width * regionPercent / 2);
+    const regionHeight = Math.floor(height * regionPercent / 2);
+
+    console.log('Creating region mask:', {
+      type: this.regionConfig.type,
+      size: this.regionConfig.size,
+      regionWidth,
+      regionHeight
+    });
+
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const idx = y * width + x;
+        
+        // Distance from center
+        const dx = Math.abs(x - centerX);
+        const dy = Math.abs(y - centerY);
+        
+        // Check if inside rectangle
+        const insideRect = dx <= regionWidth && dy <= regionHeight;
+        
+        // Set mask based on region type
+        if (this.regionConfig.type === 'inner') {
+          mask[idx] = insideRect ? 1 : 0;
+        } else { // outer
+          mask[idx] = insideRect ? 0 : 1;
+        }
+      }
+    }
+
+    return mask;
   }
 
   // Perform IFFT Shift (move zero frequency from center to corners)
