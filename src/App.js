@@ -1,4 +1,4 @@
-// App.js - Fixed counter updates and mixing
+// App.js - Stage 5: Two Output Viewports
 
 import React, { useState } from 'react';
 import ImageViewport from './components/ImageViewport';
@@ -10,8 +10,10 @@ import './App.css';
 function App() {
   const [loadedImages, setLoadedImages] = useState({});
   const [targetSize, setTargetSize] = useState(null);
-  const [outputData, setOutputData] = useState(null);
-  const [updateTrigger, setUpdateTrigger] = useState(0); // NEW: Force re-render
+  const [outputData1, setOutputData1] = useState(null);
+  const [outputData2, setOutputData2] = useState(null);
+  const [selectedOutput, setSelectedOutput] = useState(1); // NEW: Which output to use
+  const [updateTrigger, setUpdateTrigger] = useState(0);
 
   const handleImageLoaded = (viewportId, processor) => {
     const newLoadedImages = {
@@ -22,7 +24,6 @@ function App() {
     setLoadedImages(newLoadedImages);
     updateTargetSize(newLoadedImages);
     
-    // Force update after a short delay to let FFT compute
     setTimeout(() => {
       setUpdateTrigger(prev => prev + 1);
     }, 500);
@@ -44,13 +45,14 @@ function App() {
     setTargetSize({ width: minWidth, height: minHeight });
   };
 
-  // Handle mixing
+  // Handle mixing - route to selected output
   const handleMix = (processors, weights, mixMode) => {
     try {
       console.log('Starting mix with:', {
         processorCount: processors.length,
         weights,
-        mixMode
+        mixMode,
+        targetOutput: selectedOutput
       });
 
       const mixer = new FourierMixer();
@@ -64,10 +66,15 @@ function App() {
         width: result.width,
         height: result.height,
         dataLength: result.imageData.length,
-        sampleValues: Array.from(result.imageData.slice(0, 10))
+        targetOutput: selectedOutput
       });
 
-      setOutputData(result);
+      // Route to selected output
+      if (selectedOutput === 1) {
+        setOutputData1(result);
+      } else {
+        setOutputData2(result);
+      }
     } catch (error) {
       console.error('Mixing error:', error);
       alert('Error during mixing: ' + error.message);
@@ -75,7 +82,6 @@ function App() {
     }
   };
 
-  // Get processors array in order
   const getProcessorsArray = () => {
     return [
       loadedImages['1'] || null,
@@ -88,8 +94,7 @@ function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <h1>Fourier Transform Mixer</h1>
-       
+        <h1>🎨 Fourier Transform Mixer</h1>
       </header>
 
       <main className="main-content">
@@ -126,22 +131,51 @@ function App() {
           )}
         </section>
 
-        {/* Mixer Controls */}
+        {/* Mixer Controls with Output Selection */}
         <section className="section">
+          <h2 className="section-title">Mixer Controls</h2>
+          
+          {/* NEW: Output Selection */}
+          <div className="output-selector">
+            <label className="output-selector-label">
+              <strong>Send Result To:</strong>
+            </label>
+            <div className="output-selector-buttons">
+              <button
+                className={`output-select-btn ${selectedOutput === 1 ? 'active' : ''}`}
+                onClick={() => setSelectedOutput(1)}
+              >
+                📤 Output 1
+              </button>
+              <button
+                className={`output-select-btn ${selectedOutput === 2 ? 'active' : ''}`}
+                onClick={() => setSelectedOutput(2)}
+              >
+                📤 Output 2
+              </button>
+            </div>
+          </div>
+
           <ComponentMixer 
             processors={getProcessorsArray()}
             onMix={handleMix}
-            key={updateTrigger} // Force re-render when images update
+            key={updateTrigger}
           />
         </section>
 
-        {/* Output */}
+        {/* Two Output Viewports */}
         <section className="section">
-          <h2 className="section-title">Mixed Output</h2>
-          <div className="output-container">
+          <h2 className="section-title">Mixed Outputs</h2>
+          <div className="outputs-grid">
             <OutputViewport 
               id="1"
-              outputData={outputData}
+              outputData={outputData1}
+              isSelected={selectedOutput === 1}
+            />
+            <OutputViewport 
+              id="2"
+              outputData={outputData2}
+              isSelected={selectedOutput === 2}
             />
           </div>
         </section>
