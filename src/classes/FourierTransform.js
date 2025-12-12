@@ -1,5 +1,3 @@
-
-
 import FFT from 'fft.js';
 
 class FourierTransform {
@@ -12,7 +10,7 @@ class FourierTransform {
     this.fftHeight = this.nextPowerOf2(height);
     this.fftSize = this.fftWidth * this.fftHeight;
     
-    // FFT results
+    // FFT results (FULL padded dimensions - needed for mixing!)
     this.complexData = null;
     this.magnitude = null;
     this.phase = null;
@@ -30,10 +28,13 @@ class FourierTransform {
     // Perform 2D FFT
     const fftResult = this.fft2D(paddedData, this.fftWidth, this.fftHeight);
     
-    // Store results
-    this.complexData = fftResult;
+    // Apply FFT shift (move DC to center) for storage
+    const shiftedFFT = this.fftShiftComplex(fftResult, this.fftWidth, this.fftHeight);
     
-    // Compute magnitude, phase, real, imaginary
+    // Store SHIFTED results (DC in center - standard for mixing)
+    this.complexData = shiftedFFT;
+    
+    // Compute magnitude, phase, real, imaginary (for display)
     this.computeComponents();
     
     return {
@@ -98,70 +99,9 @@ class FourierTransform {
     return result;
   }
 
-  // Compute magnitude, phase, real, imaginary from complex data
-  computeComponents() {
-    // Use original dimensions for display (crop padded area)
-    const size = this.width * this.height;
-    
-    this.magnitude = new Float64Array(size);
-    this.phase = new Float64Array(size);
-    this.real = new Float64Array(size);
-    this.imaginary = new Float64Array(size);
-    
-    for (let y = 0; y < this.height; y++) {
-      for (let x = 0; x < this.width; x++) {
-        const fftIdx = y * this.fftWidth + x;
-        const displayIdx = y * this.width + x;
-        
-        const real = this.complexData[fftIdx * 2];
-        const imag = this.complexData[fftIdx * 2 + 1];
-        
-        this.real[displayIdx] = real;
-        this.imaginary[displayIdx] = imag;
-        this.magnitude[displayIdx] = Math.sqrt(real * real + imag * imag);
-        this.phase[displayIdx] = Math.atan2(imag, real);
-      }
-    }
-  }
-
-  // Get magnitude as displayable image
-  getMagnitudeDisplay() {
-    if (!this.magnitude) return null;
-    
-    const display = new Float64Array(this.magnitude.length);
-    const shifted = this.fftShift(this.magnitude, this.width, this.height);
-    
-    for (let i = 0; i < shifted.length; i++) {
-      display[i] = Math.log(1 + shifted[i]);
-    }
-    
-    return this.normalizeForDisplay(display);
-  }
-
-  // Get phase as displayable image
-  getPhaseDisplay() {
-    if (!this.phase) return null;
-    const shifted = this.fftShift(this.phase, this.width, this.height);
-    return this.normalizeForDisplay(shifted);
-  }
-
-  // Get real component as displayable image
-  getRealDisplay() {
-    if (!this.real) return null;
-    const shifted = this.fftShift(this.real, this.width, this.height);
-    return this.normalizeForDisplay(shifted);
-  }
-
-  // Get imaginary component as displayable image
-  getImaginaryDisplay() {
-    if (!this.imaginary) return null;
-    const shifted = this.fftShift(this.imaginary, this.width, this.height);
-    return this.normalizeForDisplay(shifted);
-  }
-
-  // Shift zero frequency to center
-  fftShift(data, width, height) {
-    const shifted = new Float64Array(data.length);
+  // FIXED: FFT shift for complex data (shifts DC to center)
+  fftShiftComplex(complexData, width, height) {
+    const shifted = new Float64Array(complexData.length);
     const halfW = Math.floor(width / 2);
     const halfH = Math.floor(height / 2);
     
@@ -169,12 +109,93 @@ class FourierTransform {
       for (let x = 0; x < width; x++) {
         const newX = (x + halfW) % width;
         const newY = (y + halfH) % height;
-        shifted[newY * width + newX] = data[y * width + x];
+        
+        const oldIdx = (y * width + x) * 2;
+        const newIdx = (newY * width + newX) * 2;
+        
+        shifted[newIdx] = complexData[oldIdx];
+        shifted[newIdx + 1] = complexData[oldIdx + 1];
       }
     }
     
     return shifted;
   }
+
+  // FIXED: Compute magnitude, phase, real, imaginary from FULL complex data
+  computeComponents() {
+    // Use FULL FFT dimensions (not cropped)
+    const size = this.fftWidth * this.fftHeight;
+    
+    this.magnitude = new Float64Array(size);
+    this.phase = new Float64Array(size);
+    this.real = new Float64Array(size);
+    this.imaginary = new Float64Array(size);
+    
+    // Extract from FULL complex data
+    for (let i = 0; i < size; i++) {
+      const real = this.complexData[i * 2];
+      const imag = this.complexData[i * 2 + 1];
+      
+      this.real[i] = real;
+      this.imaginary[i] = imag;
+      this.magnitude[i] = Math.sqrt(real * real + imag * imag);
+      this.phase[i] = Math.atan2(imag, real);
+    }
+  }
+
+  // Get magnitude as displayable image (crop to original size)
+  getMagnitudeDisplay() {
+    if (!this.magnitude) return null;
+    
+    // Crop to original dimensions
+    const cropped = this.cropToOriginalSize(this.magnitude);
+    
+    // Apply log scale for better visualization
+    const display = new Float64Array(cropped.length);
+    for (let i = 0; i < cropped.length; i++) {
+      display[i] = Math.log(1 + cropped[i]);
+    }
+    
+    return this.normalizeForDisplay(display);
+  }
+
+  // Get phase as displayable image (crop to original size)
+  getPhaseDisplay() {
+    if (!this.phase) return null;
+    const cropped = this.cropToOriginalSize(this.phase);
+    return this.normalizeForDisplay(cropped);
+  }
+
+  // Get real component as displayable image (crop to original size)
+  getRealDisplay() {
+    if (!this.real) return null;
+    const cropped = this.cropToOriginalSize(this.real);
+    return this.normalizeForDisplay(cropped);
+  }
+
+  // Get imaginary component as displayable image (crop to original size)
+  getImaginaryDisplay() {
+    if (!this.imaginary) return null;
+    const cropped = this.cropToOriginalSize(this.imaginary);
+    return this.normalizeForDisplay(cropped);
+  }
+
+  // NEW: Crop FFT data from padded size to original image size
+  cropToOriginalSize(data) {
+    const cropped = new Float64Array(this.width * this.height);
+    
+    for (let y = 0; y < this.height; y++) {
+      for (let x = 0; x < this.width; x++) {
+        const srcIdx = y * this.fftWidth + x;
+        const dstIdx = y * this.width + x;
+        cropped[dstIdx] = data[srcIdx];
+      }
+    }
+    
+    return cropped;
+  }
+
+  // REMOVED: Old fftShift - we now shift during FFT computation
 
   // Normalize data to 0-255 range
   normalizeForDisplay(data) {
@@ -190,7 +211,7 @@ class FourierTransform {
     const range = max - min;
     
     if (range === 0) {
-      normalized.fill(0);
+      normalized.fill(128); // FIXED: Fill with gray instead of black
       return normalized;
     }
     
@@ -205,6 +226,7 @@ class FourierTransform {
   padData(data, width, height, newWidth, newHeight) {
     const padded = new Float64Array(newWidth * newHeight);
     
+    // Zero-padding (zeros are already there from initialization)
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
         padded[y * newWidth + x] = data[y * width + x];

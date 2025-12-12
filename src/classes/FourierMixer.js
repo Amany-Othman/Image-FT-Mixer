@@ -1,4 +1,4 @@
-// FourierMixer.js - Fixed based on Python reference
+// FourierMixer.js - FIXED VERSION
 
 import FFT from 'fft.js';
 
@@ -18,7 +18,15 @@ class FourierMixer {
   }
 
   setWeights(weights) {
-    this.weights = weights;
+    // Normalize weights to sum to 1.0
+    const sum = weights.reduce((a, b) => a + b, 0);
+    if (sum === 0) {
+      console.warn('All weights are zero, using equal weights');
+      this.weights = weights.map(() => 1.0 / weights.length);
+    } else {
+      this.weights = weights.map(w => w / sum);
+    }
+    console.log('Normalized weights:', this.weights);
   }
 
   mix() {
@@ -56,7 +64,7 @@ class FourierMixer {
     };
   }
 
-  // Mix using magnitude and phase (like Python code)
+  // FIXED: Mix using magnitude and phase
   mixMagnitudePhase(fftWidth, fftHeight) {
     const size = fftWidth * fftHeight;
     const mixedComplex = new Float64Array(size * 2);
@@ -65,11 +73,10 @@ class FourierMixer {
 
     for (let i = 0; i < size; i++) {
       let mixedMagnitude = 0;
-      let mixedPhase = 0;
-      let totalMagWeight = 0;
-      let totalPhaseWeight = 0;
+      let sumCosPhase = 0; // For circular mean of phases
+      let sumSinPhase = 0;
 
-      // Weighted sum of magnitude and phase
+      // Weighted sum of magnitude and CIRCULAR mean of phase
       for (let j = 0; j < this.processors.length; j++) {
         const fft = this.processors[j].fft;
         const weight = this.weights[j];
@@ -83,17 +90,16 @@ class FourierMixer {
         const magnitude = Math.sqrt(real * real + imag * imag);
         const phase = Math.atan2(imag, real);
 
-        // Weighted sum
+        // Weighted sum of magnitude (simple average)
         mixedMagnitude += magnitude * weight;
-        mixedPhase += phase * weight;
         
-        totalMagWeight += weight;
-        totalPhaseWeight += weight;
+        // Circular mean for phase (convert to unit vector)
+        sumCosPhase += Math.cos(phase) * weight;
+        sumSinPhase += Math.sin(phase) * weight;
       }
 
-      // Normalize if needed
-      if (totalMagWeight > 0) mixedMagnitude /= totalMagWeight;
-      if (totalPhaseWeight > 0) mixedPhase /= totalPhaseWeight;
+      // Get mixed phase from circular mean
+      const mixedPhase = Math.atan2(sumSinPhase, sumCosPhase);
 
       // Convert back to complex: magnitude * e^(i*phase)
       const real = mixedMagnitude * Math.cos(mixedPhase);
@@ -106,7 +112,7 @@ class FourierMixer {
     return mixedComplex;
   }
 
-  // Mix using real and imaginary (like Python code)
+  // FIXED: Mix using real and imaginary
   mixRealImaginary(fftWidth, fftHeight) {
     const size = fftWidth * fftHeight;
     const mixedComplex = new Float64Array(size * 2);
@@ -116,9 +122,8 @@ class FourierMixer {
     for (let i = 0; i < size; i++) {
       let mixedReal = 0;
       let mixedImag = 0;
-      let totalWeight = 0;
 
-      // Weighted sum
+      // Simple weighted sum (weights already normalized)
       for (let j = 0; j < this.processors.length; j++) {
         const fft = this.processors[j].fft;
         const weight = this.weights[j];
@@ -127,13 +132,6 @@ class FourierMixer {
 
         mixedReal += fft.complexData[i * 2] * weight;
         mixedImag += fft.complexData[i * 2 + 1] * weight;
-        totalWeight += weight;
-      }
-
-      // Normalize
-      if (totalWeight > 0) {
-        mixedReal /= totalWeight;
-        mixedImag /= totalWeight;
       }
 
       mixedComplex[i * 2] = mixedReal;
@@ -166,11 +164,11 @@ class FourierMixer {
     return shifted;
   }
 
-  // Perform 2D Inverse FFT
+  // FIXED: Perform 2D Inverse FFT
   performIFFT(complexData, fftWidth, fftHeight, outputWidth, outputHeight) {
     console.log('Starting IFFT:', { fftWidth, fftHeight, outputWidth, outputHeight });
 
-    // Apply ifftshift BEFORE ifft (like Python code)
+    // Apply ifftshift BEFORE ifft
     const shiftedData = this.ifftShift(complexData, fftWidth, fftHeight);
 
     const fftRow = new FFT(fftWidth);
@@ -214,27 +212,31 @@ class FourierMixer {
       }
     }
 
-    // Extract magnitude (like Python: np.abs(ifft2(...)))
+    // CRITICAL FIX: Take REAL part only, not magnitude!
+    // For grayscale images, imaginary part should be near zero
     const imageData = new Uint8ClampedArray(outputWidth * outputHeight);
     
-    // Calculate magnitudes
-    const magnitudes = [];
+    // Extract real parts
+    const realValues = [];
     for (let y = 0; y < outputHeight; y++) {
       for (let x = 0; x < outputWidth; x++) {
         const idx = y * fftWidth + x;
         const real = result[idx * 2];
-        const imag = result[idx * 2 + 1];
-        const magnitude = Math.sqrt(real * real + imag * imag);
-        magnitudes.push(magnitude);
+        realValues.push(real);
       }
     }
 
-    // Normalize like Python: cv2.normalize(..., 0, 255, cv2.NORM_MINMAX)
-    const min = Math.min(...magnitudes);
-    const max = Math.max(...magnitudes);
+    // FIXED: Find min/max without spread operator (causes stack overflow on large arrays)
+    let min = realValues[0];
+    let max = realValues[0];
+    for (let i = 1; i < realValues.length; i++) {
+      if (realValues[i] < min) min = realValues[i];
+      if (realValues[i] > max) max = realValues[i];
+    }
+    
     const range = max - min;
 
-    console.log('IFFT magnitude range:', { min, max, range });
+    console.log('IFFT real value range:', { min, max, range });
 
     if (range === 0 || !isFinite(range)) {
       console.warn('Invalid range, filling with gray');
@@ -243,19 +245,30 @@ class FourierMixer {
     }
 
     // Normalize to 0-255
-    for (let i = 0; i < magnitudes.length; i++) {
-      const normalized = ((magnitudes[i] - min) / range) * 255;
+    for (let i = 0; i < realValues.length; i++) {
+      const normalized = ((realValues[i] - min) / range) * 255;
       imageData[i] = Math.max(0, Math.min(255, Math.round(normalized)));
     }
 
-    // Log statistics
+    // Log statistics (without spread operator)
     const sampleValues = Array.from(imageData.slice(0, 20));
-    const avg = imageData.reduce((a, b) => a + b, 0) / imageData.length;
+    let sum = 0;
+    let minVal = imageData[0];
+    let maxVal = imageData[0];
+    
+    for (let i = 0; i < imageData.length; i++) {
+      sum += imageData[i];
+      if (imageData[i] < minVal) minVal = imageData[i];
+      if (imageData[i] > maxVal) maxVal = imageData[i];
+    }
+    
+    const avg = sum / imageData.length;
+    
     console.log('Output statistics:', { 
       sample: sampleValues, 
       average: avg.toFixed(2),
-      min: Math.min(...imageData),
-      max: Math.max(...imageData)
+      min: minVal,
+      max: maxVal
     });
 
     return imageData;
