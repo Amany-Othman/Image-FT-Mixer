@@ -1,133 +1,127 @@
-// RegionSelector.js - Handles frequency region selection
+// RegionSelector.jsx - Stage 7: Fixed with Disabled State Support
 
-import React, { useState } from 'react';
-import './RegionSelector.css';
+import React, { useState } from "react";
+import "./RegionSelector.css";
 
-function RegionSelector({ onRegionChange }) {
-  const [regionSize, setRegionSize] = useState(30); // Percentage of image
-  const [regionType, setRegionType] = useState('inner'); // 'inner' or 'outer'
-  const [isEnabled, setIsEnabled] = useState(false);
+function RegionSelector({ onRegionChange, disabled = false }) {
+  const [enabled, setEnabled] = useState(false);
+  const [regionType, setRegionType] = useState("inner"); // 'inner' or 'outer'
+  const [regionSize, setRegionSize] = useState(50); // percentage (0-100)
+
+  // Notify parent whenever config changes
+  const notifyChange = (newEnabled, newType, newSize) => {
+    const config = {
+      enabled: newEnabled,
+      type: newType,
+      size: newSize,
+    };
+    console.log("RegionSelector: Notifying change", config);
+    onRegionChange(config);
+  };
+
+  const handleEnableToggle = (e) => {
+    const newEnabled = e.target.checked;
+    setEnabled(newEnabled);
+    notifyChange(newEnabled, regionType, regionSize);
+  };
+
+  const handleTypeChange = (newType) => {
+    setRegionType(newType);
+    notifyChange(enabled, newType, regionSize);
+  };
 
   const handleSizeChange = (e) => {
     const newSize = parseInt(e.target.value);
     setRegionSize(newSize);
-    
-    if (isEnabled && onRegionChange) {
-      onRegionChange({
-        enabled: true,
-        size: newSize,
-        type: regionType
-      });
-    }
-  };
-
-  const handleTypeChange = (type) => {
-    setRegionType(type);
-    
-    if (isEnabled && onRegionChange) {
-      onRegionChange({
-        enabled: true,
-        size: regionSize,
-        type: type
-      });
-    }
-  };
-
-  const handleToggle = (e) => {
-    const enabled = e.target.checked;
-    setIsEnabled(enabled);
-    
-    if (onRegionChange) {
-      onRegionChange({
-        enabled: enabled,
-        size: regionSize,
-        type: regionType
-      });
-    }
+    notifyChange(enabled, regionType, newSize);
   };
 
   return (
     <div className="region-selector">
       <div className="region-header">
+        <h3>Region Selection</h3>
         <label className="region-toggle">
-          <input 
-            type="checkbox" 
-            checked={isEnabled}
-            onChange={handleToggle}
+          <input
+            type="checkbox"
+            checked={enabled}
+            onChange={handleEnableToggle}
+            disabled={disabled}
           />
-          <span className="toggle-label">
-            🎯 Enable Region Selection
-          </span>
+          <span>Enable Region Filter</span>
         </label>
       </div>
 
-      {isEnabled && (
+      {enabled && (
         <div className="region-controls">
           {/* Region Type Selection */}
-          <div className="region-type-section">
-            <label className="control-label">Region Type:</label>
-            <div className="region-type-buttons">
+          <div className="region-type">
+            <label>Region Type:</label>
+            <div className="type-buttons">
               <button
-                className={`region-btn ${regionType === 'inner' ? 'active' : ''}`}
-                onClick={() => handleTypeChange('inner')}
+                className={`type-button ${regionType === "inner" ? "active inner" : ""}`}
+                onClick={() => !disabled && handleTypeChange("inner")}
+                disabled={disabled}
               >
                 📍 Inner (Low Freq)
               </button>
               <button
-                className={`region-btn ${regionType === 'outer' ? 'active' : ''}`}
-                onClick={() => handleTypeChange('outer')}
+                className={`type-button ${regionType === "outer" ? "active outer" : ""}`}
+                onClick={() => !disabled && handleTypeChange("outer")}
+                disabled={disabled}
               >
                 🌐 Outer (High Freq)
               </button>
             </div>
-            <p className="region-hint">
-              {regionType === 'inner' 
-                ? '📍 Inner: Selects smooth, low-frequency content (structure, overall shape)'
-                : '🌐 Outer: Selects sharp, high-frequency content (edges, fine details)'}
-            </p>
           </div>
 
           {/* Region Size Slider */}
-          <div className="region-size-section">
-            <label className="control-label">
-              Region Size: <strong>{regionSize}%</strong>
-            </label>
+          <div className="region-size">
+            <div className="size-label">
+              <label>Region Size:</label>
+              <span className="size-value">{regionSize}%</span>
+            </div>
             <input
               type="range"
               min="10"
-              max="90"
+              max="100"
+              step="5"
               value={regionSize}
               onChange={handleSizeChange}
-              className="region-slider"
+              disabled={disabled}
+              className="size-slider"
             />
-            <div className="slider-labels">
-              <span>10% (Small)</span>
-              <span>50% (Medium)</span>
-              <span>90% (Large)</span>
+            <div className="size-markers">
+              <span>10%</span>
+              <span>50%</span>
+              <span>100%</span>
             </div>
           </div>
 
           {/* Visual Guide */}
-          <div className="region-visual-guide">
-            <div className="guide-label">Preview:</div>
+          <div className="region-guide">
             <div className="guide-box">
-              <div 
-                className="guide-inner"
+              <div
+                className={`guide-rectangle ${regionType}`}
                 style={{
                   width: `${regionSize}%`,
                   height: `${regionSize}%`,
-                  opacity: regionType === 'inner' ? 0.6 : 0.2
                 }}
               />
-              <div className="guide-center">DC</div>
+              <div className="guide-center" />
             </div>
             <p className="guide-text">
-              {regionType === 'inner' 
-                ? `✓ Using ${regionSize}% center region`
-                : `✓ Using outer ${100 - regionSize}% region`}
+              {regionType === "inner"
+                ? "✅ Selected (low frequencies - smooth features)"
+                : "✅ Selected (high frequencies - edges & details)"}
             </p>
           </div>
         </div>
+      )}
+
+      {!enabled && (
+        <p className="region-disabled-hint">
+          Enable region selection to filter specific frequency ranges
+        </p>
       )}
     </div>
   );

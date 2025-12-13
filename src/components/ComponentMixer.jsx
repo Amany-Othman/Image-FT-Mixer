@@ -1,20 +1,47 @@
-// ComponentMixer.jsx - Stage 6: FIXED with Region Config Exposure
+// ComponentMixer.jsx - Stage 7: Clean UI, No Progress Bar
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import RegionSelector from "./RegionSelector";
 import "./ComponentMixer.css";
 
 function ComponentMixer({ processors, onMix, onRegionConfigChange }) {
   const [mixMode, setMixMode] = useState("magnitude-phase");
-  const [weights, setWeights] = useState([0.25, 0.25, 0.25, 0.25]);
+  const [weights, setWeights] = useState([0.25, 0.25, 0.25, 0.25]); // Default 25% each
   const [regionConfig, setRegionConfig] = useState(null);
   const [isMixing, setIsMixing] = useState(false);
+
+  // Refs for cancellation and debouncing
+  const cancelRef = useRef(false);
+  const debounceTimerRef = useRef(null);
+  const mixCountRef = useRef(0);
 
   // Check how many images have FFT
   const availableProcessors = processors.filter((p) => p && p.hasFFT());
   const canMix = availableProcessors.length > 0;
 
-  // Handle weight change for a specific image
+  // REAL-TIME: Auto-trigger mix whenever settings change
+  useEffect(() => {
+    if (!canMix) return;
+
+    // Debounce: Clear previous timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // Start new timer
+    debounceTimerRef.current = setTimeout(() => {
+      performMix();
+    }, 500);
+
+    // Cleanup
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [weights, mixMode, regionConfig, canMix]);
+
+  // Handle weight change
   const handleWeightChange = (index, value) => {
     const newWeights = [...weights];
     newWeights[index] = parseFloat(value);
@@ -26,49 +53,85 @@ function ComponentMixer({ processors, onMix, onRegionConfigChange }) {
     setMixMode(event.target.value);
   };
 
-  // NEW: Handle region selection change and notify parent
+  // Handle region selection change
   const handleRegionChange = (config) => {
     setRegionConfig(config);
     console.log('Region config updated:', config);
     
-    // Notify parent (App.js) so it can pass to ImageViewports
     if (onRegionConfigChange) {
       onRegionConfigChange(config);
     }
   };
 
-  // Handle mix button click
-  const handleMixClick = async () => {
-    if (!canMix) return;
+  // Perform the actual mixing (silently, no progress bar)
+  const performMix = async () => {
+    // Cancel any previous operation
+    if (isMixing) {
+      cancelRef.current = true;
+      await new Promise(resolve => setTimeout(resolve, 50));
+    }
 
+    // Start new operation
+    const currentMixId = ++mixCountRef.current;
+    cancelRef.current = false;
     setIsMixing(true);
 
-    // Use setTimeout to allow UI to update
-    setTimeout(() => {
-      try {
-        // Pass regionConfig to onMix
-        onMix(availableProcessors, weights, mixMode, regionConfig);
-      } catch (error) {
-        console.error("Error mixing:", error);
-        alert("Error during mixing: " + error.message);
+    console.log(`🚀 Starting real-time mix #${currentMixId}`);
+
+    try {
+      // Perform mixing without progress bar
+      await new Promise((resolve, reject) => {
+        setTimeout(() => {
+          try {
+            if (cancelRef.current) {
+              console.log(`Mix #${currentMixId} cancelled`);
+              resolve();
+              return;
+            }
+
+            onMix(availableProcessors, weights, mixMode, regionConfig);
+            resolve();
+          } catch (error) {
+            reject(error);
+          }
+        }, 50);
+      });
+
+      // Check if cancelled
+      if (!cancelRef.current) {
+        console.log(`✅ Mix #${currentMixId} completed`);
       }
+
       setIsMixing(false);
-    }, 100);
+
+    } catch (error) {
+      console.error("Error mixing:", error);
+      setIsMixing(false);
+    }
   };
 
-  // Reset weights to equal distribution
+  // Reset weights to 25% each
   const handleResetWeights = () => {
-    const equalWeight = 1.0 / availableProcessors.length;
-    setWeights([equalWeight, equalWeight, equalWeight, equalWeight]);
+    setWeights([0.25, 0.25, 0.25, 0.25]);
   };
 
-  // Normalize weights to sum to 1
+  // Normalize weights
   const normalizeWeights = () => {
     const sum = weights.reduce((a, b) => a + b, 0);
     if (sum === 0) return;
     const normalized = weights.map((w) => w / sum);
     setWeights(normalized);
   };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      cancelRef.current = true;
+    };
+  }, []);
 
   return (
     <div className="component-mixer">
@@ -114,7 +177,9 @@ function ComponentMixer({ processors, onMix, onRegionConfigChange }) {
 
           {/* Region Selection */}
           <div className="mixer-section">
-            <RegionSelector onRegionChange={handleRegionChange} />
+            <RegionSelector 
+              onRegionChange={handleRegionChange}
+            />
           </div>
 
           {/* Weight Sliders */}
@@ -175,17 +240,6 @@ function ComponentMixer({ processors, onMix, onRegionConfigChange }) {
                 <span className="sum-warning"> (Should be 100%)</span>
               )}
             </div>
-          </div>
-
-          {/* Mix Button */}
-          <div className="mixer-section">
-            <button
-              className="mix-button"
-              onClick={handleMixClick}
-              disabled={isMixing}
-            >
-              {isMixing ? "Mixing..." : "Mix Images"}
-            </button>
           </div>
         </>
       )}

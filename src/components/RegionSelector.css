@@ -1,216 +1,381 @@
-/* RegionSelector.css */
+/* RegionSelector.css - Stage 7 Complete Styling */
 
 .region-selector {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 20px;
-  border-radius: 12px;
-  margin: 20px 0;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1rem;
 }
 
 .region-header {
-  margin-bottom: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.region-header h3 {
+  margin: 0;
+  color: #1f2937;
+  font-size: 16px;
 }
 
 .region-toggle {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 0.5rem;
   cursor: pointer;
-  color: white;
-  font-size: 18px;
-  font-weight: 600;
 }
 
 .region-toggle input[type="checkbox"] {
-  width: 24px;
-  height: 24px;
+  width: 18px;
+  height: 18px;
   cursor: pointer;
-  accent-color: #4CAF50;
 }
 
-.toggle-label {
-  user-select: none;
+.region-toggle input[type="checkbox"]:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.region-toggle span {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
 }
 
 .region-controls {
-  background: rgba(255, 255, 255, 0.95);
-  padding: 20px;
-  border-radius: 8px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  animation: slideDown 0.3s ease;
+  gap: 1.5rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
 }
 
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.region-type-section,
-.region-size-section {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.control-label {
-  font-size: 16px;
+/* Region Type Selection */
+.region-type label {
+  display: block;
   font-weight: 600;
-  color: #333;
-}
-
-.region-type-buttons {
-  display: flex;
-  gap: 10px;
-}
-
-.region-btn {
-  flex: 1;
-  padding: 12px 20px;
-  border: 2px solid #ddd;
-  background: white;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 15px;
-  font-weight: 500;
-  transition: all 0.3s ease;
-  color: #666;
-}
-
-.region-btn:hover {
-  border-color: #667eea;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
-
-.region-btn.active {
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  border-color: #667eea;
-  color: white;
-  font-weight: 600;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-}
-
-.region-hint {
-  background: #e3f2fd;
-  padding: 10px;
-  border-radius: 6px;
+  color: #374151;
+  margin-bottom: 0.5rem;
   font-size: 14px;
-  color: #1976d2;
-  margin: 5px 0 0 0;
-  border-left: 4px solid #2196F3;
 }
 
-.region-slider {
+.type-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.type-button {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: 2px solid #d1d5db;
+  background: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.type-button:hover:not(:disabled) {
+  border-color: #9ca3af;
+  background: #f9fafb;
+}
+
+.type-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.type-button.active.inner {
+  background: #d1fae5;
+  border-color: #10b981;
+  color: #065f46;
+}
+
+.type-button.active.outer {
+  background: #fee2e2;
+  border-color: #ef4444;
+  color: #991b1b;
+}
+
+/* Region Size Slider */
+.region-size {
+  display: flex;
+  flex-direction: column;
+}
+
+.size-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.size-label label {
+  font-weight: 600;
+  color: #374151;
+  font-size: 14px;
+}
+
+.size-value {
+  font-weight: bold;
+  color: #6366f1;
+  font-size: 14px;
+}
+
+.size-slider {
   width: 100%;
-  height: 8px;
-  border-radius: 5px;
-  background: linear-gradient(to right, #4CAF50, #FFC107, #F44336);
+  height: 6px;
+  border-radius: 3px;
+  background: #e5e7eb;
   outline: none;
   cursor: pointer;
 }
 
-.region-slider::-webkit-slider-thumb {
+.size-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
   appearance: none;
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
-  background: white;
+  background: #6366f1;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-  border: 3px solid #667eea;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-.region-slider::-moz-range-thumb {
-  width: 24px;
-  height: 24px;
+.size-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
-  background: white;
+  background: #6366f1;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-  border: 3px solid #667eea;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-.slider-labels {
+.size-slider:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.size-markers {
   display: flex;
   justify-content: space-between;
-  font-size: 12px;
-  color: #666;
-  margin-top: 5px;
+  margin-top: 0.25rem;
+  font-size: 11px;
+  color: #9ca3af;
 }
 
-.region-visual-guide {
-  background: #f5f5f5;
-  padding: 15px;
-  border-radius: 8px;
-  text-align: center;
-}
-
-.guide-label {
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 10px;
+/* Visual Guide */
+.region-guide {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 1rem;
 }
 
 .guide-box {
-  width: 200px;
-  height: 200px;
-  background: linear-gradient(to right, #f44336, #ff9800, #ffeb3b, #4caf50, #2196f3, #9c27b0);
-  border: 3px solid #333;
-  margin: 0 auto;
+  width: 150px;
+  height: 150px;
+  background: #1f2937;
+  border: 2px solid #6b7280;
+  border-radius: 4px;
+  margin: 0 auto 1rem;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
 }
 
-.guide-inner {
-  background: rgba(76, 175, 80, 0.6);
-  border: 3px dashed white;
+.guide-rectangle {
   position: absolute;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
+  border: 3px dashed;
+  transition: all 0.3s;
+}
+
+.guide-rectangle.inner {
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.15);
+}
+
+.guide-rectangle.outer {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.15);
 }
 
 .guide-center {
+  width: 6px;
+  height: 6px;
+  background: #fbbf24;
+  border-radius: 50%;
   position: absolute;
-  background: white;
-  color: #333;
-  font-weight: bold;
-  padding: 5px 10px;
-  border-radius: 4px;
-  font-size: 14px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-  z-index: 10;
+  box-shadow: 0 0 8px rgba(251, 191, 36, 0.8);
 }
 
 .guide-text {
-  margin-top: 10px;
-  font-size: 14px;
-  color: #666;
-  font-weight: 500;
+  text-align: center;
+  font-size: 13px;
+  color: #6b7280;
+  margin: 0;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  .region-type-buttons {
-    flex-direction: column;
-  }
-  
-  .guide-box {
-    width: 150px;
-    height: 150px;
-  }
+.region-disabled-hint {
+  color: #9ca3af;
+  font-size: 13px;
+  font-style: italic;
+  text-align: center;
+  margin: 0;
+  padding: 1rem 0;
+}
+/* Add these to your existing ComponentMixer.css */
+
+/* Progress Bar Styles */
+.progress-container {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.progress-bar {
+    width: 100%;
+    height: 30px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4CAF50, #8BC34A);
+    border-radius: 15px;
+    transition: width 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -100% 0;
+    }
+    100% {
+        background-position: 100% 0;
+    }
+}
+
+.progress-fill::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.3),
+        transparent
+    );
+    animation: slide 1s infinite;
+}
+
+@keyframes slide {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+.progress-text {
+    position: relative;
+    z-index: 1;
+    color: white;
+    font-weight: 700;
+    font-size: 14px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.progress-label {
+    color: white;
+    text-align: center;
+    margin-top: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+/* Auto-Mix Toggle Styles */
+.auto-mix-toggle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 15px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.auto-mix-toggle:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+}
+
+.auto-mix-toggle input[type="checkbox"] {
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    accent-color: #4CAF50;
+}
+
+.auto-mix-toggle span {
+    color: white;
+    font-weight: 600;
+    font-size: 16px;
+    user-select: none;
+}
+
+.auto-mix-hint {
+    background: #e3f2fd;
+    padding: 10px 15px;
+    border-radius: 6px;
+    margin-top: 10px;
+    font-size: 13px;
+    color: #1976d2;
+    border-left: 4px solid #2196F3;
+}
+
+/* Disabled state for controls during mixing */
+.weight-slider:disabled,
+.mode-selector input:disabled,
+.type-button:disabled,
+.size-slider:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Mix button hidden state when auto-mix is on */
+.mix-button.hidden {
+    display: none;
 }
