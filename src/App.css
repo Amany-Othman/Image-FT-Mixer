@@ -1,3 +1,5 @@
+/* App.css - Updated with existing styles + new two-column layout */
+
 * {
   box-sizing: border-box;
 }
@@ -32,6 +34,31 @@ body {
   font-weight: 600;
 }
 
+/* NEW: Two-column layout for main content */
+.main-content-new {
+  max-width: 1800px;
+  margin: 0 auto;
+  padding: 20px;
+  display: grid;
+  grid-template-columns: 1fr 350px;
+  gap: 20px;
+}
+
+/* NEW: Left section - Images and mixer */
+.left-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* NEW: Right section - Output panel (sticky) */
+.right-section {
+  position: sticky;
+  top: 20px;
+  height: fit-content;
+}
+
+/* ORIGINAL: Keep old main-content for backward compatibility if needed */
 .main-content {
   max-width: 1600px;
   margin: 0 auto;
@@ -41,7 +68,6 @@ body {
   gap: 20px;
 }
 
-/* Left side: Input grid */
 .inputs-section {
   display: flex;
   flex-direction: column;
@@ -63,7 +89,7 @@ body {
   gap: 15px;
 }
 
-/* Right side: Control panel */
+/* Control panel */
 .control-panel {
   background: #ffffff;
   border: 2px solid #e0e0e0;
@@ -73,7 +99,6 @@ body {
   position: sticky;
   top: 20px;
 }
-
 
 .control-section {
   margin-bottom: 20px;
@@ -380,19 +405,40 @@ body {
   gap: 15px;
 }
 
+/* Info box */
+.info-box {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 12px 16px;
+  border-radius: 6px;
+  text-align: center;
+  font-size: 13px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-top: 15px;
+}
+
+.info-box strong {
+  font-weight: 600;
+}
+
 /* Responsive design */
 @media (max-width: 1400px) {
-  .main-content {
+
+  .main-content,
+  .main-content-new {
     grid-template-columns: 1fr 320px;
   }
 }
 
 @media (max-width: 1200px) {
-  .main-content {
+
+  .main-content,
+  .main-content-new {
     grid-template-columns: 1fr;
   }
 
-  .control-panel {
+  .control-panel,
+  .right-section {
     position: static;
   }
 
@@ -409,20 +455,8 @@ body {
   .roi-buttons {
     grid-template-columns: 1fr;
   }
-}
 
-/* Info box */
-.info-box {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 12px 16px;
-  border-radius: 6px;
-  text-align: center;
-  font-size: 13px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  margin-top: 15px;
-}
-
-.info-box strong {
-  font-weight: 600;
+  .output-selector-buttons {
+    grid-template-columns: 1fr;
+  }
 }

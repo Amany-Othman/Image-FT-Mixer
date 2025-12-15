@@ -1,9 +1,17 @@
-// ImageViewport.jsx - Fixed
+// ImageViewport.jsx - With integrated weight slider
 import React, { useState, useRef, useEffect } from "react";
 import ImageProcessor from "../classes/ImageProcessor";
 import "./ImageViewport.css";
 
-function ImageViewport({ id, onImageLoaded, targetSize, regionConfig }) {
+function ImageViewport({
+  id,
+  onImageLoaded,
+  targetSize,
+  regionConfig,
+  weight,
+  onWeightChange,
+  isDisabled,
+}) {
   const [hasImage, setHasImage] = useState(false);
   const [imageDimensions, setImageDimensions] = useState(null);
   const [selectedComponent, setSelectedComponent] = useState("magnitude");
@@ -171,7 +179,6 @@ function ImageViewport({ id, onImageLoaded, targetSize, regionConfig }) {
     drawImage();
   };
 
-  // FIXED: Calculate proper gradient percentage
   const getBrightnessGradient = () => {
     const percent = ((brightness + 100) / 200) * 100;
     return `linear-gradient(to right, #667eea 0%, #764ba2 ${percent}%, #e0e0e0 ${percent}%, #e0e0e0 100%)`;
@@ -216,6 +223,28 @@ function ImageViewport({ id, onImageLoaded, targetSize, regionConfig }) {
           <div className="section-header">
             <h4>ORIGINAL IMAGE</h4>
           </div>
+
+          {/* WEIGHT SLIDER - NEW: Above the image */}
+          {hasImage && (
+            <div className="weight-slider-container">
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={weight}
+                onChange={(e) =>
+                  onWeightChange(parseInt(id), parseFloat(e.target.value))
+                }
+                disabled={isDisabled}
+                className="weight-slider-input"
+              />
+              <div className="weight-percentage">
+                {(weight * 100).toFixed(0)}%
+              </div>
+            </div>
+          )}
+
           <div
             className="canvas-container"
             onDoubleClick={handleDoubleClick}
@@ -229,7 +258,7 @@ function ImageViewport({ id, onImageLoaded, targetSize, regionConfig }) {
             <canvas ref={imageCanvasRef} />
           </div>
 
-          {/* BRIGHTNESS SLIDER - FIXED GRADIENT */}
+          {/* BRIGHTNESS SLIDER */}
           {hasImage && (
             <div className="slider-control brightness-control">
               <div className="slider-label">
@@ -255,18 +284,23 @@ function ImageViewport({ id, onImageLoaded, targetSize, regionConfig }) {
         <div className="display-section">
           <div className="section-header">
             <h4>FFT COMPONENT</h4>
-            <select
-              value={selectedComponent}
-              onChange={handleComponentChange}
-              disabled={!processor.hasFFT()}
-              className="component-selector"
-            >
-              <option value="magnitude">Magnitude</option>
-              <option value="phase">Phase</option>
-              <option value="real">Real</option>
-              <option value="imaginary">Imaginary</option>
-            </select>
           </div>
+
+          {/* FFT COMPONENT SELECTOR - NEW: Full width above canvas */}
+          {processor.hasFFT() && (
+            <div className="fft-component-selector-container">
+              <select
+                value={selectedComponent}
+                onChange={handleComponentChange}
+                className="fft-component-selector"
+              >
+                <option value="magnitude">Magnitude</option>
+                <option value="phase">Phase</option>
+                <option value="real">Real</option>
+                <option value="imaginary">Imaginary</option>
+              </select>
+            </div>
+          )}
 
           <div className="canvas-container component-canvas">
             {!processor.hasFFT() && hasImage && (
@@ -286,7 +320,7 @@ function ImageViewport({ id, onImageLoaded, targetSize, regionConfig }) {
             <canvas ref={componentCanvasRef} />
           </div>
 
-          {/* CONTRAST SLIDER - FIXED GRADIENT */}
+          {/* CONTRAST SLIDER */}
           {hasImage && (
             <div className="slider-control contrast-control">
               <div className="slider-label">
@@ -318,7 +352,7 @@ function ImageViewport({ id, onImageLoaded, targetSize, regionConfig }) {
         </div>
       </div>
 
-      {/* RESET BUTTON - NOW PER IMAGE */}
+      {/* RESET BUTTON */}
       {hasImage && (brightness !== 0 || contrast !== 0) && (
         <div className="reset-container">
           <button

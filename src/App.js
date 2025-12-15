@@ -1,4 +1,4 @@
-// App.js - Updated
+// App.js - Updated for new right sidebar design
 import React, { useState } from 'react';
 import ImageViewport from './components/ImageViewport';
 import ComponentMixer from './components/ComponentMixer';
@@ -14,6 +14,10 @@ function App() {
   const [selectedOutput, setSelectedOutput] = useState(1);
   const [updateTrigger, setUpdateTrigger] = useState(0);
   const [regionConfig, setRegionConfig] = useState(null);
+  
+  // New states for the right sidebar controls
+  const [mixMode, setMixMode] = useState('magnitude-phase');
+  const [regionType, setRegionType] = useState('inner');
 
   const handleImageLoaded = (viewportId, processor) => {
     const newLoadedImages = {
@@ -50,21 +54,21 @@ function App() {
     console.log('App: Region config updated:', config);
   };
 
-  const handleMix = (processors, weights, mixMode, regionConfig) => {
+  const handleMix = (processors, weights, currentMixMode, currentRegionConfig) => {
     try {
       console.log('Starting mix with:', {
         processorCount: processors.length,
         weights,
-        mixMode,
-        regionConfig,
+        mixMode: currentMixMode,
+        regionConfig: currentRegionConfig,
         targetOutput: selectedOutput
       });
 
       const mixer = new FourierMixer();
       mixer.setProcessors(processors);
       mixer.setWeights(weights);
-      mixer.setMixMode(mixMode);
-      mixer.setRegionConfig(regionConfig);
+      mixer.setMixMode(currentMixMode);
+      mixer.setRegionConfig(currentRegionConfig);
 
       const result = mixer.mix();
       
@@ -102,10 +106,9 @@ function App() {
         <h1>🎨 Fourier Transform Mixer</h1>
       </header>
 
-      <main className="main-content">
-        {/* Input Viewports - No section title */}
-        <section className="section">
-          {/* Removed: <h2 className="section-title">Input Images</h2> */}
+      <main className="main-content-new">
+        {/* Left: Input Images */}
+        <section className="left-section">
           <div className="viewports-grid">
             <ImageViewport 
               id="1" 
@@ -138,56 +141,31 @@ function App() {
               <strong>Unified Size:</strong> {targetSize.width} x {targetSize.height}
             </div>
           )}
-        </section>
 
-        {/* Mixer Controls */}
-        <section className="section">
-          <h2 className="section-title">Mixer Controls</h2>
-          
-          <div className="output-selector">
-            <label className="output-selector-label">
-              <strong>Send Result To:</strong>
-            </label>
-            <div className="output-selector-buttons">
-              <button
-                className={`output-select-btn ${selectedOutput === 1 ? 'active' : ''}`}
-                onClick={() => setSelectedOutput(1)}
-              >
-                📤 Output 1
-              </button>
-              <button
-                className={`output-select-btn ${selectedOutput === 2 ? 'active' : ''}`}
-                onClick={() => setSelectedOutput(2)}
-              >
-                📤 Output 2
-              </button>
-            </div>
-          </div>
-
+          {/* Mixer Controls Below Images */}
           <ComponentMixer 
             processors={getProcessorsArray()}
             onMix={handleMix}
             onRegionConfigChange={handleRegionConfigChange}
+            mixMode={mixMode}
+            onMixModeChange={setMixMode}
             key={updateTrigger}
           />
         </section>
 
-        {/* Two Output Viewports */}
-        <section className="section">
-          <h2 className="section-title">Mixed Outputs</h2>
-          <div className="outputs-grid">
-            <OutputViewport 
-              id="1"
-              outputData={outputData1}
-              isSelected={selectedOutput === 1}
-            />
-            <OutputViewport 
-              id="2"
-              outputData={outputData2}
-              isSelected={selectedOutput === 2}
-            />
-          </div>
-        </section>
+        {/* Right: Output Viewport with Controls */}
+        <aside className="right-section">
+          <OutputViewport 
+            outputData1={outputData1}
+            outputData2={outputData2}
+            selectedOutput={selectedOutput}
+            onOutputSelect={setSelectedOutput}
+            mixMode={mixMode}
+            onMixModeChange={setMixMode}
+            regionType={regionType}
+            onRegionTypeChange={setRegionType}
+          />
+        </aside>
       </main>
     </div>
   );

@@ -1,39 +1,39 @@
-// ComponentMixer.jsx - Stage 7: Clean UI, No Progress Bar
+// ComponentMixer.jsx - Updated to receive mixMode as prop
 
 import React, { useState, useEffect, useRef } from "react";
 import RegionSelector from "./RegionSelector";
 import "./ComponentMixer.css";
 
-function ComponentMixer({ processors, onMix, onRegionConfigChange }) {
-  const [mixMode, setMixMode] = useState("magnitude-phase");
-  const [weights, setWeights] = useState([0.25, 0.25, 0.25, 0.25]); // Default 25% each
+function ComponentMixer({
+  processors,
+  onMix,
+  onRegionConfigChange,
+  mixMode,
+  onMixModeChange,
+}) {
+  const [weights, setWeights] = useState([0.25, 0.25, 0.25, 0.25]);
   const [regionConfig, setRegionConfig] = useState(null);
   const [isMixing, setIsMixing] = useState(false);
 
-  // Refs for cancellation and debouncing
   const cancelRef = useRef(false);
   const debounceTimerRef = useRef(null);
   const mixCountRef = useRef(0);
 
-  // Check how many images have FFT
   const availableProcessors = processors.filter((p) => p && p.hasFFT());
   const canMix = availableProcessors.length > 0;
 
-  // REAL-TIME: Auto-trigger mix whenever settings change
+  // Auto-trigger mix when settings change
   useEffect(() => {
     if (!canMix) return;
 
-    // Debounce: Clear previous timer
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
 
-    // Start new timer
     debounceTimerRef.current = setTimeout(() => {
       performMix();
     }, 500);
 
-    // Cleanup
     return () => {
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
@@ -41,37 +41,27 @@ function ComponentMixer({ processors, onMix, onRegionConfigChange }) {
     };
   }, [weights, mixMode, regionConfig, canMix]);
 
-  // Handle weight change
   const handleWeightChange = (index, value) => {
     const newWeights = [...weights];
     newWeights[index] = parseFloat(value);
     setWeights(newWeights);
   };
 
-  // Handle mix mode change
-  const handleMixModeChange = (event) => {
-    setMixMode(event.target.value);
-  };
-
-  // Handle region selection change
   const handleRegionChange = (config) => {
     setRegionConfig(config);
-    console.log('Region config updated:', config);
-    
+    console.log("Region config updated:", config);
+
     if (onRegionConfigChange) {
       onRegionConfigChange(config);
     }
   };
 
-  // Perform the actual mixing (silently, no progress bar)
   const performMix = async () => {
-    // Cancel any previous operation
     if (isMixing) {
       cancelRef.current = true;
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await new Promise((resolve) => setTimeout(resolve, 50));
     }
 
-    // Start new operation
     const currentMixId = ++mixCountRef.current;
     cancelRef.current = false;
     setIsMixing(true);
@@ -79,7 +69,6 @@ function ComponentMixer({ processors, onMix, onRegionConfigChange }) {
     console.log(`🚀 Starting real-time mix #${currentMixId}`);
 
     try {
-      // Perform mixing without progress bar
       await new Promise((resolve, reject) => {
         setTimeout(() => {
           try {
@@ -97,25 +86,21 @@ function ComponentMixer({ processors, onMix, onRegionConfigChange }) {
         }, 50);
       });
 
-      // Check if cancelled
       if (!cancelRef.current) {
         console.log(`✅ Mix #${currentMixId} completed`);
       }
 
       setIsMixing(false);
-
     } catch (error) {
       console.error("Error mixing:", error);
       setIsMixing(false);
     }
   };
 
-  // Reset weights to 25% each
   const handleResetWeights = () => {
     setWeights([0.25, 0.25, 0.25, 0.25]);
   };
 
-  // Normalize weights
   const normalizeWeights = () => {
     const sum = weights.reduce((a, b) => a + b, 0);
     if (sum === 0) return;
@@ -123,7 +108,6 @@ function ComponentMixer({ processors, onMix, onRegionConfigChange }) {
     setWeights(normalized);
   };
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (debounceTimerRef.current) {
@@ -150,36 +134,11 @@ function ComponentMixer({ processors, onMix, onRegionConfigChange }) {
 
       {canMix && (
         <>
-          {/* Mix Mode Selection */}
-          <div className="mixer-section">
-            <h3>Mix Mode</h3>
-            <div className="mode-selector">
-              <label className={mixMode === "magnitude-phase" ? "active" : ""}>
-                <input
-                  type="radio"
-                  value="magnitude-phase"
-                  checked={mixMode === "magnitude-phase"}
-                  onChange={handleMixModeChange}
-                />
-                <span>Magnitude & Phase</span>
-              </label>
-              <label className={mixMode === "real-imaginary" ? "active" : ""}>
-                <input
-                  type="radio"
-                  value="real-imaginary"
-                  checked={mixMode === "real-imaginary"}
-                  onChange={handleMixModeChange}
-                />
-                <span>Real & Imaginary</span>
-              </label>
-            </div>
-          </div>
+          {/* Note: Mix mode is now controlled from the right sidebar */}
 
           {/* Region Selection */}
           <div className="mixer-section">
-            <RegionSelector 
-              onRegionChange={handleRegionChange}
-            />
+            <RegionSelector onRegionChange={handleRegionChange} />
           </div>
 
           {/* Weight Sliders */}
