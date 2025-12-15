@@ -1,5 +1,4 @@
-// App.js - Stage 6: FIXED with Region Rectangle Visualization
-
+// App.js - Updated
 import React, { useState } from 'react';
 import ImageViewport from './components/ImageViewport';
 import ComponentMixer from './components/ComponentMixer';
@@ -14,7 +13,7 @@ function App() {
   const [outputData2, setOutputData2] = useState(null);
   const [selectedOutput, setSelectedOutput] = useState(1);
   const [updateTrigger, setUpdateTrigger] = useState(0);
-  const [regionConfig, setRegionConfig] = useState(null); // NEW: Store region config
+  const [regionConfig, setRegionConfig] = useState(null);
 
   const handleImageLoaded = (viewportId, processor) => {
     const newLoadedImages = {
@@ -46,13 +45,11 @@ function App() {
     setTargetSize({ width: minWidth, height: minHeight });
   };
 
-  // NEW: Handle region config changes from ComponentMixer
   const handleRegionConfigChange = (config) => {
     setRegionConfig(config);
     console.log('App: Region config updated:', config);
   };
 
-  // Handle mixing with regionConfig parameter
   const handleMix = (processors, weights, mixMode, regionConfig) => {
     try {
       console.log('Starting mix with:', {
@@ -78,7 +75,6 @@ function App() {
         targetOutput: selectedOutput
       });
 
-      // Route to selected output
       if (selectedOutput === 1) {
         setOutputData1(result);
       } else {
@@ -107,9 +103,9 @@ function App() {
       </header>
 
       <main className="main-content">
-        {/* Input Viewports - NOW WITH REGION CONFIG */}
+        {/* Input Viewports - No section title */}
         <section className="section">
-          <h2 className="section-title">Input Images</h2>
+          {/* Removed: <h2 className="section-title">Input Images</h2> */}
           <div className="viewports-grid">
             <ImageViewport 
               id="1" 
@@ -144,11 +140,10 @@ function App() {
           )}
         </section>
 
-        {/* Mixer Controls with Output Selection */}
+        {/* Mixer Controls */}
         <section className="section">
           <h2 className="section-title">Mixer Controls</h2>
           
-          {/* Output Selection */}
           <div className="output-selector">
             <label className="output-selector-label">
               <strong>Send Result To:</strong>

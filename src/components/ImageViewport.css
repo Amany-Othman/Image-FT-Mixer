@@ -1,45 +1,30 @@
+/* ImageViewport.css - Fixed */
+
 .image-viewport {
-    border: 2px solid #ddd;
+    border: 1px solid #ddd;
     border-radius: 8px;
     padding: 15px;
-    background: white;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    background: #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
 }
 
-.viewport-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-    padding-bottom: 10px;
-    border-bottom: 2px solid #eee;
+/* Display sections - SIDE BY SIDE */
+.display-sections-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 10px;
 }
 
-.viewport-header h3 {
-    margin: 0;
-    font-size: 18px;
-    color: #333;
-    font-weight: 600;
-}
-
-.dimensions {
-    font-size: 12px;
-    color: #666;
-    background: #f0f0f0;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-weight: 500;
-}
-
-/* Display sections */
 .display-section {
-    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
 }
 
 .display-section h4 {
-    margin: 0 0 10px 0;
-    font-size: 14px;
-    color: #555;
+    margin: 0 0 8px 0;
+    font-size: 11px;
+    color: #666;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -49,23 +34,26 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
+    gap: 8px;
 }
 
 /* Component selector dropdown */
 .component-selector {
-    padding: 6px 12px;
-    border: 2px solid #ddd;
+    padding: 4px 8px;
+    border: 1px solid #ddd;
     border-radius: 4px;
-    background: white;
-    font-size: 13px;
+    background: #fff;
+    color: #333;
+    font-size: 10px;
     cursor: pointer;
     transition: all 0.2s;
     font-weight: 500;
 }
 
 .component-selector:hover:not(:disabled) {
-    border-color: #667eea;
+    border-color: #999;
+    background: #f9f9f9;
 }
 
 .component-selector:disabled {
@@ -74,129 +62,224 @@
     color: #999;
 }
 
-.component-selector:focus {
-    outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-/* Canvas containers */
+/* Canvas containers - WHITE BACKGROUND */
 .canvas-container {
     position: relative;
-    min-height: 200px;
-    background: #f9f9f9;
-    border: 2px dashed #ddd;
+    min-height: 150px;
+    max-height: 180px;
+    background: #ffffff;
+    border: 1px solid #e0e0e0;
     border-radius: 4px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     transition: all 0.2s;
+    overflow: hidden;
 }
 
 .canvas-container:hover {
-    border-color: #667eea;
-    background: #f0f4ff;
+    border-color: #999;
 }
 
 .component-canvas {
     cursor: default;
-    background: #fafafa;
+    background: #ffffff;
 }
 
 .component-canvas:hover {
-    border-color: #ddd;
-    background: #fafafa;
+    border-color: #e0e0e0;
 }
 
 .placeholder {
     text-align: center;
     color: #999;
-    padding: 40px 20px;
+    padding: 30px 15px;
     position: absolute;
 }
 
 .placeholder p {
     margin: 0;
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 500;
 }
 
 canvas {
     max-width: 100%;
-    max-height: 300px;
+    max-height: 100%;
     display: block;
     image-rendering: pixelated;
+    background: #ffffff;
 }
 
-/* Controls */
-.viewport-controls {
+/* Slider Controls */
+.slider-control {
+    margin-top: 10px;
+    padding: 8px;
+    background: #f8f8f8;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+}
+
+.slider-label {
     display: flex;
-    gap: 10px;
-    margin-top: 15px;
-    padding-top: 15px;
-    border-top: 1px solid #eee;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
 }
 
-.viewport-controls button {
-    flex: 1;
-    padding: 12px 20px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 14px;
+.slider-name {
+    font-size: 11px;
     font-weight: 600;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.slider-value {
+    font-size: 12px;
+    font-weight: 700;
+    color: #333;
+    min-width: 30px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+/* FIXED: Slider styling - track goes through center of thumb */
+.slider {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 18px;
+    /* Match thumb height for proper centering */
+    outline: none;
+    margin: 0;
+    padding: 0;
+    position: relative;
+    background: transparent;
+    /* Background gradient is now set inline via style attribute on ::before */
+}
+
+/* Create the track line that goes through the center */
+.slider::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 6px;
+    transform: translateY(-50%);
+    border-radius: 3px;
+    pointer-events: none;
+    /* Gradient will be set via CSS variable */
+    background: var(--slider-bg, linear-gradient(to right, #e0e0e0, #e0e0e0));
+}
+
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 2px solid #667eea;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     transition: all 0.2s;
-    box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+    position: relative;
+    z-index: 10;
 }
 
-.viewport-controls button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.4);
+.slider::-webkit-slider-thumb:hover {
+    transform: scale(1.1);
+    border-color: #764ba2;
 }
 
-.viewport-controls button:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+.slider::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: transparent;
 }
-/* ImageViewport.css - ADD THESE STYLES TO YOUR EXISTING FILE */
+
+.slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 2px solid #667eea;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s;
+    position: relative;
+    z-index: 10;
+}
+
+.slider::-moz-range-thumb:hover {
+    transform: scale(1.1);
+    border-color: #764ba2;
+}
+
+.slider::-moz-range-track {
+    background: transparent;
+    height: 6px;
+    border-radius: 3px;
+}
+
+/* Reset button */
+.reset-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.reset-button {
+    background: rgba(102, 126, 234, 0.1);
+    color: #667eea;
+    border: 1px solid #667eea;
+    padding: 6px 16px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.reset-button:hover {
+    background: rgba(102, 126, 234, 0.2);
+    border-color: #764ba2;
+    color: #764ba2;
+}
+
+.reset-button:active {
+    transform: scale(0.95);
+}
 
 /* Region selection indicator badge */
 .region-indicator {
-  margin-top: 8px;
-  text-align: center;
+    margin-top: 8px;
+    text-align: center;
 }
 
 .region-badge {
-  display: inline-block;
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: bold;
-  letter-spacing: 0.5px;
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: bold;
+    letter-spacing: 0.5px;
 }
 
 .region-badge.inner {
-  background-color: rgba(0, 255, 0, 0.2);
-  color: #00ff00;
-  border: 1px solid #00ff00;
+    background-color: rgba(0, 200, 0, 0.1);
+    color: #00a000;
+    border: 1px solid #00c000;
 }
 
 .region-badge.outer {
-  background-color: rgba(255, 0, 0, 0.2);
-  color: #ff0000;
-  border: 1px solid #ff0000;
-}
-
-/* Make component canvas container position relative for overlay */
-.component-canvas {
-  position: relative;
-}
-
-.component-canvas canvas {
-  display: block;
-  max-width: 100%;
-  height: auto;
+    background-color: rgba(255, 80, 80, 0.1);
+    color: #d00000;
+    border: 1px solid #ff5050;
 }
