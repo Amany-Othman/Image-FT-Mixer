@@ -1,4 +1,4 @@
-// App.js - Updated for new right sidebar design
+// App.js - Updated for weight slider management
 import React, { useState } from 'react';
 import ImageViewport from './components/ImageViewport';
 import ComponentMixer from './components/ComponentMixer';
@@ -15,9 +15,12 @@ function App() {
   const [updateTrigger, setUpdateTrigger] = useState(0);
   const [regionConfig, setRegionConfig] = useState(null);
   
-  // New states for the right sidebar controls
+  // Right sidebar controls
   const [mixMode, setMixMode] = useState('magnitude-phase');
   const [regionType, setRegionType] = useState('inner');
+  
+  // Weight management - NOW IN APP LEVEL
+  const [weights, setWeights] = useState([0.25, 0.25, 0.25, 0.25]);
 
   const handleImageLoaded = (viewportId, processor) => {
     const newLoadedImages = {
@@ -54,11 +57,20 @@ function App() {
     console.log('App: Region config updated:', config);
   };
 
-  const handleMix = (processors, weights, currentMixMode, currentRegionConfig) => {
+  // Handle weight changes from individual image sliders
+  const handleWeightChange = (viewportId, newWeight) => {
+    const index = parseInt(viewportId) - 1;
+    const newWeights = [...weights];
+    newWeights[index] = newWeight;
+    setWeights(newWeights);
+    console.log(`Weight changed for Image ${viewportId}: ${newWeight}`);
+  };
+
+  const handleMix = (processors, currentWeights, currentMixMode, currentRegionConfig) => {
     try {
       console.log('Starting mix with:', {
         processorCount: processors.length,
-        weights,
+        weights: currentWeights,
         mixMode: currentMixMode,
         regionConfig: currentRegionConfig,
         targetOutput: selectedOutput
@@ -66,7 +78,7 @@ function App() {
 
       const mixer = new FourierMixer();
       mixer.setProcessors(processors);
-      mixer.setWeights(weights);
+      mixer.setWeights(currentWeights);
       mixer.setMixMode(currentMixMode);
       mixer.setRegionConfig(currentRegionConfig);
 
@@ -115,24 +127,36 @@ function App() {
               onImageLoaded={handleImageLoaded}
               targetSize={targetSize}
               regionConfig={regionConfig}
+              weight={weights[0]}
+              onWeightChange={handleWeightChange}
+              isDisabled={!loadedImages['1'] || !loadedImages['1'].hasFFT()}
             />
             <ImageViewport 
               id="2" 
               onImageLoaded={handleImageLoaded}
               targetSize={targetSize}
               regionConfig={regionConfig}
+              weight={weights[1]}
+              onWeightChange={handleWeightChange}
+              isDisabled={!loadedImages['2'] || !loadedImages['2'].hasFFT()}
             />
             <ImageViewport 
               id="3" 
               onImageLoaded={handleImageLoaded}
               targetSize={targetSize}
               regionConfig={regionConfig}
+              weight={weights[2]}
+              onWeightChange={handleWeightChange}
+              isDisabled={!loadedImages['3'] || !loadedImages['3'].hasFFT()}
             />
             <ImageViewport 
               id="4" 
               onImageLoaded={handleImageLoaded}
               targetSize={targetSize}
               regionConfig={regionConfig}
+              weight={weights[3]}
+              onWeightChange={handleWeightChange}
+              isDisabled={!loadedImages['4'] || !loadedImages['4'].hasFFT()}
             />
           </div>
 
@@ -149,6 +173,7 @@ function App() {
             onRegionConfigChange={handleRegionConfigChange}
             mixMode={mixMode}
             onMixModeChange={setMixMode}
+            weights={weights}
             key={updateTrigger}
           />
         </section>

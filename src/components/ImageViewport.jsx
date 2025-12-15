@@ -1,4 +1,4 @@
-// ImageViewport.jsx - With integrated weight slider
+// ImageViewport.jsx - With weight slider label and aligned layout
 import React, { useState, useRef, useEffect } from "react";
 import ImageProcessor from "../classes/ImageProcessor";
 import "./ImageViewport.css";
@@ -224,9 +224,15 @@ function ImageViewport({
             <h4>ORIGINAL IMAGE</h4>
           </div>
 
-          {/* WEIGHT SLIDER - NEW: Above the image */}
+          {/* WEIGHT SLIDER with LABEL */}
           {hasImage && (
             <div className="weight-slider-container">
+              <div className="slider-label">
+                <span className="slider-name">WEIGHT:</span>
+                <span className="slider-value">
+                  {(weight * 100).toFixed(0)}%
+                </span>
+              </div>
               <input
                 type="range"
                 min="0"
@@ -238,10 +244,12 @@ function ImageViewport({
                 }
                 disabled={isDisabled}
                 className="weight-slider-input"
+                style={{
+                  background: `linear-gradient(to right, #667eea 0%, #764ba2 ${
+                    weight * 100
+                  }%, #e0e0e0 ${weight * 100}%, #e0e0e0 100%)`,
+                }}
               />
-              <div className="weight-percentage">
-                {(weight * 100).toFixed(0)}%
-              </div>
             </div>
           )}
 
@@ -273,7 +281,7 @@ function ImageViewport({
                 onChange={handleBrightnessChange}
                 className="slider"
                 style={{
-                  "--slider-bg": getBrightnessGradient(),
+                  background: getBrightnessGradient(),
                 }}
               />
             </div>
@@ -286,7 +294,7 @@ function ImageViewport({
             <h4>FFT COMPONENT</h4>
           </div>
 
-          {/* FFT COMPONENT SELECTOR - NEW: Full width above canvas */}
+          {/* FFT COMPONENT SELECTOR - Full width above canvas */}
           {processor.hasFFT() && (
             <div className="fft-component-selector-container">
               <select
@@ -300,6 +308,11 @@ function ImageViewport({
                 <option value="imaginary">Imaginary</option>
               </select>
             </div>
+          )}
+
+          {/* Add spacer when no FFT but has image to align with weight slider */}
+          {!processor.hasFFT() && hasImage && (
+            <div style={{ height: "46px" }}></div>
           )}
 
           <div className="canvas-container component-canvas">
@@ -335,7 +348,7 @@ function ImageViewport({
                 onChange={handleContrastChange}
                 className="slider"
                 style={{
-                  "--slider-bg": getContrastGradient(),
+                  background: getContrastGradient(),
                 }}
               />
             </div>

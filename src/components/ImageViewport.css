@@ -1,4 +1,4 @@
-/* ImageViewport.css - Updated with weight slider styling */
+/* ImageViewport.css - Updated with matching weight slider styling */
 
 .image-viewport {
     background: white;
@@ -36,11 +36,16 @@
     letter-spacing: 0.5px;
 }
 
-/* WEIGHT SLIDER - NEW DESIGN */
+/* ==========================================
+   WEIGHT SLIDER - UPDATED TO MATCH BOTTOM SLIDERS
+   ========================================== */
 .weight-slider-container {
     position: relative;
     width: 100%;
     margin-bottom: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 }
 
 .weight-slider-input {
@@ -48,15 +53,16 @@
     height: 8px;
     -webkit-appearance: none;
     appearance: none;
-    background: linear-gradient(to right, #e0e0e0 0%, #667eea 100%);
+    /* Dynamic gradient will be set via inline style */
+    background: #e0e0e0;
     border-radius: 4px;
     outline: none;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: background 0.1s ease;
 }
 
 .weight-slider-input:hover {
-    background: linear-gradient(to right, #d0d0d0 0%, #5568d3 100%);
+    opacity: 0.95;
 }
 
 .weight-slider-input:disabled {
@@ -64,42 +70,46 @@
     cursor: not-allowed;
 }
 
-/* Webkit Thumb */
+/* Webkit Thumb - UPDATED TO MATCH BOTTOM SLIDERS */
 .weight-slider-input::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
     width: 20px;
     height: 20px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #ffffff;
+    border: 2px solid #667eea;
     cursor: pointer;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
     transition: all 0.2s ease;
 }
 
 .weight-slider-input::-webkit-slider-thumb:hover {
-    transform: scale(1.15);
-    box-shadow: 0 3px 8px rgba(102, 126, 234, 0.5);
+    transform: scale(1.1);
+    border-color: #764ba2;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
 }
 
 .weight-slider-input::-webkit-slider-thumb:active {
-    transform: scale(1.1);
+    transform: scale(1.05);
 }
 
-/* Firefox Thumb */
+/* Firefox Thumb - UPDATED TO MATCH BOTTOM SLIDERS */
 .weight-slider-input::-moz-range-thumb {
     width: 20px;
     height: 20px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #ffffff;
+    border: 2px solid #667eea;
     cursor: pointer;
-    border: none;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
     transition: all 0.2s ease;
 }
 
 .weight-slider-input::-moz-range-thumb:hover {
-    transform: scale(1.15);
+    transform: scale(1.1);
+    border-color: #764ba2;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
 }
 
 /* Percentage label */
@@ -113,7 +123,33 @@
     pointer-events: none;
 }
 
-/* FFT COMPONENT SELECTOR - NEW: Full width */
+/* Label for weight slider - matches bottom sliders */
+.weight-slider-container .slider-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.weight-slider-container .slider-name {
+    font-size: 11px;
+    font-weight: 600;
+    color: #666;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.weight-slider-container .slider-value {
+    font-size: 13px;
+    font-weight: 700;
+    color: #333;
+    min-width: 40px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ==========================================
+   FFT COMPONENT SELECTOR
+   ========================================== */
 .fft-component-selector-container {
     width: 100%;
     margin-bottom: 8px;
@@ -149,7 +185,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 150px;
+    min-height: 200px;
     cursor: pointer;
     border: 2px solid #e0e0e0;
     position: relative;
@@ -167,17 +203,31 @@
 }
 
 .placeholder {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     text-align: center;
     color: #999;
     padding: 20px;
+    pointer-events: none;
 }
 
 .placeholder p {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.5;
+    white-space: nowrap;
 }
 
-/* Brightness & Contrast Sliders */
+/* ==========================================
+   BRIGHTNESS & CONTRAST SLIDERS
+   ========================================== */
 .slider-control {
     display: flex;
     flex-direction: column;
@@ -198,20 +248,21 @@
 }
 
 .slider-value {
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 700;
-    color: #667eea;
+    color: #333;
     min-width: 40px;
     text-align: right;
+    font-variant-numeric: tabular-nums;
 }
 
 .slider {
     width: 100%;
-    height: 6px;
+    height: 8px;
     -webkit-appearance: none;
     appearance: none;
     background: var(--slider-bg, #e0e0e0);
-    border-radius: 3px;
+    border-radius: 4px;
     outline: none;
     cursor: pointer;
 }
@@ -219,32 +270,36 @@
 .slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 16px;
-    height: 16px;
+    width: 20px;
+    height: 20px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #ffffff;
+    border: 2px solid #667eea;
     cursor: pointer;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
     transition: all 0.2s;
 }
 
 .slider::-webkit-slider-thumb:hover {
-    transform: scale(1.15);
+    transform: scale(1.1);
+    border-color: #764ba2;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
 }
 
 .slider::-moz-range-thumb {
-    width: 16px;
-    height: 16px;
+    width: 20px;
+    height: 20px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #ffffff;
+    border: 2px solid #667eea;
     cursor: pointer;
-    border: none;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
     transition: all 0.2s;
 }
 
 .slider::-moz-range-thumb:hover {
-    transform: scale(1.15);
+    transform: scale(1.1);
+    border-color: #764ba2;
 }
 
 /* Region indicator */
