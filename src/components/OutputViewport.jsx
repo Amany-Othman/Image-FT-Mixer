@@ -1,4 +1,4 @@
-// OutputViewport.jsx - With integrated region controls
+// OutputViewport.jsx - With improved region controls matching contrast slider design
 import React, { useRef, useEffect, useState } from "react";
 import "./OutputViewport.css";
 
@@ -11,11 +11,11 @@ function OutputViewport({
   onMixModeChange,
   regionType,
   onRegionTypeChange,
-  onRegionConfigChange, // NEW: to update region config
+  onRegionConfigChange,
 }) {
   const canvas1Ref = useRef(null);
   const canvas2Ref = useRef(null);
-  
+
   // Region filter state
   const [regionEnabled, setRegionEnabled] = useState(false);
   const [regionSize, setRegionSize] = useState(50);
@@ -38,6 +38,13 @@ function OutputViewport({
 
   const handleRegionSizeChange = (e) => {
     setRegionSize(parseInt(e.target.value));
+  };
+
+  // Calculate gradient that fills from LEFT to thumb position (0-100 range)
+  const getRegionSliderGradient = () => {
+    // Map 10-100 range to 0-100% for gradient
+    const percent = ((regionSize - 10) / (100 - 10)) * 100;
+    return `linear-gradient(to right, #667eea 0%, #764ba2 ${percent}%, #e0e0e0 ${percent}%, #e0e0e0 100%)`;
   };
 
   // Draw output 1
@@ -120,34 +127,38 @@ function OutputViewport({
         </select>
       </div>
 
-      {/* Enable Region Filter Checkbox */}
-      <div className="control-row checkbox-row">
-        <label className="checkbox-label">
+      {/* Enable Region Filter Toggle - Improved Design */}
+      <div className="region-filter-toggle">
+        <label className="toggle-switch">
           <input
             type="checkbox"
             checked={regionEnabled}
             onChange={handleRegionEnabledChange}
           />
-          <span>Enable Region Filter</span>
+          <span className="toggle-slider"></span>
         </label>
+        <span className="toggle-label">Enable Region Filter</span>
       </div>
 
-      {/* Region Size Slider (appears when enabled) */}
+      {/* Region Size Slider - Matching Contrast Slider Design */}
       {regionEnabled && (
-        <div className="control-row slider-row">
-          <label className="control-label">Size:</label>
-          <div className="slider-container">
-            <input
-              type="range"
-              min="10"
-              max="100"
-              step="5"
-              value={regionSize}
-              onChange={handleRegionSizeChange}
-              className="region-slider"
-            />
+        <div className="region-size-control">
+          <div className="slider-label-row">
+            <span className="slider-name">SIZE:</span>
             <span className="slider-value">{regionSize}%</span>
           </div>
+          <input
+            type="range"
+            min="10"
+            max="100"
+            step="5"
+            value={regionSize}
+            onChange={handleRegionSizeChange}
+            className="region-slider"
+            style={{
+              background: getRegionSliderGradient(),
+            }}
+          />
         </div>
       )}
 
@@ -165,7 +176,7 @@ function OutputViewport({
               checked={selectedOutput === 1}
               onChange={() => onOutputSelect(1)}
             />
-            <span className="radio-text">Port 1</span>
+            <span className="radio-text">PORT 1</span>
           </label>
           <label
             className={`radio-label ${selectedOutput === 2 ? "active" : ""}`}
@@ -177,7 +188,7 @@ function OutputViewport({
               checked={selectedOutput === 2}
               onChange={() => onOutputSelect(2)}
             />
-            <span className="radio-text">Port 2</span>
+            <span className="radio-text">PORT 2</span>
           </label>
         </div>
       </div>

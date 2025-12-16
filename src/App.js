@@ -1,7 +1,6 @@
-// App.js - Fixed with proper initial state and region handling
+// App.js - Removed Component Mixer section
 import React, { useState, useEffect } from 'react';
 import ImageViewport from './components/ImageViewport';
-import ComponentMixer from './components/ComponentMixer';
 import OutputViewport from './components/OutputViewport';
 import FourierMixer from './classes/FourierMixer';
 import './App.css';
@@ -69,6 +68,8 @@ function App() {
   const handleRegionConfigChange = (config) => {
     console.log('App: Region config updated:', config);
     setRegionConfig(config);
+    // Trigger auto-mix when region config changes
+    autoMix();
   };
 
   const handleWeightChange = (viewportId, newWeight) => {
@@ -77,22 +78,28 @@ function App() {
     newWeights[index] = newWeight;
     setWeights(newWeights);
     console.log(`Weight changed for Image ${viewportId}: ${newWeight}%`);
+    // Trigger auto-mix when weights change
+    setTimeout(() => autoMix(), 100);
   };
 
-  const handleMix = (processors, currentWeights, currentMixMode, currentRegionConfig) => {
+  // Auto-mix function to handle mixing when settings change
+  const autoMix = () => {
+    const processors = getProcessorsArray().filter(p => p && p.hasFFT());
+    if (processors.length === 0) return;
+
     try {
-      console.log('=== STARTING MIX ===');
+      console.log('=== AUTO-MIXING ===');
       console.log('Processors:', processors.length);
-      console.log('Weights:', currentWeights);
-      console.log('Mix Mode:', currentMixMode);
-      console.log('Region Config:', currentRegionConfig);
+      console.log('Weights:', weights);
+      console.log('Mix Mode:', mixMode);
+      console.log('Region Config:', regionConfig);
       console.log('Target Output:', selectedOutput);
 
       const mixer = new FourierMixer();
       mixer.setProcessors(processors);
-      mixer.setWeights(currentWeights);
-      mixer.setMixMode(currentMixMode);
-      mixer.setRegionConfig(currentRegionConfig);
+      mixer.setWeights(weights);
+      mixer.setMixMode(mixMode);
+      mixer.setRegionConfig(regionConfig);
 
       const result = mixer.mix();
       
@@ -100,7 +107,6 @@ function App() {
         width: result.width,
         height: result.height,
         dataLength: result.imageData.length,
-        sampleData: Array.from(result.imageData.slice(0, 10)),
         targetOutput: selectedOutput
       });
 
@@ -112,11 +118,15 @@ function App() {
         console.log('✅ Output set to Port 2');
       }
     } catch (error) {
-      console.error('❌ Mixing error:', error);
+      console.error('❌ Auto-mixing error:', error);
       console.error('Error stack:', error.stack);
-      alert('Error during mixing: ' + error.message);
     }
   };
+
+  // Auto-mix when weights, mixMode, or regionConfig change
+  useEffect(() => {
+    autoMix();
+  }, [weights, mixMode, regionConfig, selectedOutput]);
 
   const getProcessorsArray = () => {
     return [
@@ -180,16 +190,6 @@ function App() {
               <strong>Unified Size:</strong> {targetSize.width} x {targetSize.height}
             </div>
           )}
-
-          {/* Mixer Controls Below Images */}
-          <ComponentMixer 
-            processors={getProcessorsArray()}
-            onMix={handleMix}
-            mixMode={mixMode}
-            weights={weights}
-            regionConfig={regionConfig}
-            key={updateTrigger}
-          />
         </section>
 
         {/* Right: Output Viewport with Controls */}
