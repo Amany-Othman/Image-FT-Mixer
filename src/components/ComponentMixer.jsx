@@ -1,17 +1,14 @@
-// ComponentMixer.jsx - Updated to receive weights as prop (no internal weight sliders)
+// ComponentMixer.jsx - Fixed with proper dependency tracking
 import React, { useState, useEffect, useRef } from "react";
-import RegionSelector from "./RegionSelector";
 import "./ComponentMixer.css";
 
 function ComponentMixer({
   processors,
   onMix,
-  onRegionConfigChange,
   mixMode,
-  onMixModeChange,
-  weights, // Receive weights from parent
+  weights,
+  regionConfig,
 }) {
-  const [regionConfig, setRegionConfig] = useState(null);
   const [isMixing, setIsMixing] = useState(false);
   const cancelRef = useRef(false);
   const debounceTimerRef = useRef(null);
@@ -20,9 +17,23 @@ function ComponentMixer({
   const availableProcessors = processors.filter((p) => p && p.hasFFT());
   const canMix = availableProcessors.length > 0;
 
+  // Create a stable string representation of dependencies for comparison
+  const weightsKey = JSON.stringify(weights);
+  const regionConfigKey = regionConfig ? JSON.stringify(regionConfig) : 'null';
+
   // Auto-trigger mix when settings change
   useEffect(() => {
-    if (!canMix) return;
+    if (!canMix) {
+      console.log('Cannot mix - no processors available');
+      return;
+    }
+
+    console.log('Settings changed, scheduling mix:', {
+      weights,
+      mixMode,
+      regionConfig,
+      processorCount: availableProcessors.length
+    });
 
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
@@ -30,25 +41,18 @@ function ComponentMixer({
 
     debounceTimerRef.current = setTimeout(() => {
       performMix();
-    }, 500);
+    }, 300);
 
     return () => {
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [weights, mixMode, regionConfig, canMix]);
-
-  const handleRegionChange = (config) => {
-    setRegionConfig(config);
-    console.log("Region config updated:", config);
-    if (onRegionConfigChange) {
-      onRegionConfigChange(config);
-    }
-  };
+  }, [weightsKey, mixMode, regionConfigKey, canMix]);
 
   const performMix = async () => {
     if (isMixing) {
+      console.log('Already mixing, cancelling previous operation');
       cancelRef.current = true;
       await new Promise((resolve) => setTimeout(resolve, 50));
     }
@@ -57,33 +61,39 @@ function ComponentMixer({
     cancelRef.current = false;
     setIsMixing(true);
 
-    console.log(`🚀 Starting real-time mix #${currentMixId}`);
+    console.log(`🚀 Starting real-time mix #${currentMixId}`, {
+      weights,
+      mixMode,
+      regionConfig,
+      processorCount: availableProcessors.length
+    });
 
     try {
       await new Promise((resolve, reject) => {
         setTimeout(() => {
           try {
             if (cancelRef.current) {
-              console.log(`Mix #${currentMixId} cancelled`);
+              console.log(`❌ Mix #${currentMixId} cancelled`);
               resolve();
               return;
             }
 
+            // Call the mix function with all parameters
             onMix(availableProcessors, weights, mixMode, regionConfig);
+            
+            console.log(`✅ Mix #${currentMixId} completed successfully`);
             resolve();
           } catch (error) {
+            console.error(`❌ Mix #${currentMixId} failed:`, error);
             reject(error);
           }
         }, 50);
       });
 
-      if (!cancelRef.current) {
-        console.log(`✅ Mix #${currentMixId} completed`);
-      }
-
       setIsMixing(false);
     } catch (error) {
       console.error("Error mixing:", error);
+      alert("Mixing failed: " + error.message);
       setIsMixing(false);
     }
   };
@@ -103,6 +113,7 @@ function ComponentMixer({
         <h2>Component Mixer</h2>
         <div className="available-images">
           {availableProcessors.length} / 4 images ready
+          {isMixing && <span className="mixing-indicator"> • Mixing...</span>}
         </div>
       </div>
 
@@ -110,15 +121,6 @@ function ComponentMixer({
         <div className="mixer-warning">
           <p>⚠️ Load at least one image with FFT to start mixing</p>
         </div>
-      )}
-
-      {canMix && (
-        <>
-          {/* Region Selection */}
-          <div className="mixer-section">
-            <RegionSelector onRegionChange={handleRegionChange} />
-          </div>
-        </>
       )}
     </div>
   );

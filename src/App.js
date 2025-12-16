@@ -1,5 +1,5 @@
-// App.js - Updated for weight slider management
-import React, { useState } from 'react';
+// App.js - Fixed with proper initial state and region handling
+import React, { useState, useEffect } from 'react';
 import ImageViewport from './components/ImageViewport';
 import ComponentMixer from './components/ComponentMixer';
 import OutputViewport from './components/OutputViewport';
@@ -13,14 +13,28 @@ function App() {
   const [outputData2, setOutputData2] = useState(null);
   const [selectedOutput, setSelectedOutput] = useState(1);
   const [updateTrigger, setUpdateTrigger] = useState(0);
-  const [regionConfig, setRegionConfig] = useState(null);
+  
+  // Initialize with default region config (disabled)
+  const [regionConfig, setRegionConfig] = useState({
+    enabled: false,
+    type: 'inner',
+    size: 50
+  });
   
   // Right sidebar controls
   const [mixMode, setMixMode] = useState('magnitude-phase');
   const [regionType, setRegionType] = useState('inner');
   
-  // Weight management - NOW IN APP LEVEL
+  // Weight management
   const [weights, setWeights] = useState([0.25, 0.25, 0.25, 0.25]);
+
+  // Sync regionType changes with regionConfig
+  useEffect(() => {
+    setRegionConfig(prev => ({
+      ...prev,
+      type: regionType
+    }));
+  }, [regionType]);
 
   const handleImageLoaded = (viewportId, processor) => {
     const newLoadedImages = {
@@ -53,28 +67,26 @@ function App() {
   };
 
   const handleRegionConfigChange = (config) => {
-    setRegionConfig(config);
     console.log('App: Region config updated:', config);
+    setRegionConfig(config);
   };
 
-  // Handle weight changes from individual image sliders
   const handleWeightChange = (viewportId, newWeight) => {
     const index = parseInt(viewportId) - 1;
     const newWeights = [...weights];
     newWeights[index] = newWeight;
     setWeights(newWeights);
-    console.log(`Weight changed for Image ${viewportId}: ${newWeight}`);
+    console.log(`Weight changed for Image ${viewportId}: ${newWeight}%`);
   };
 
   const handleMix = (processors, currentWeights, currentMixMode, currentRegionConfig) => {
     try {
-      console.log('Starting mix with:', {
-        processorCount: processors.length,
-        weights: currentWeights,
-        mixMode: currentMixMode,
-        regionConfig: currentRegionConfig,
-        targetOutput: selectedOutput
-      });
+      console.log('=== STARTING MIX ===');
+      console.log('Processors:', processors.length);
+      console.log('Weights:', currentWeights);
+      console.log('Mix Mode:', currentMixMode);
+      console.log('Region Config:', currentRegionConfig);
+      console.log('Target Output:', selectedOutput);
 
       const mixer = new FourierMixer();
       mixer.setProcessors(processors);
@@ -88,18 +100,21 @@ function App() {
         width: result.width,
         height: result.height,
         dataLength: result.imageData.length,
+        sampleData: Array.from(result.imageData.slice(0, 10)),
         targetOutput: selectedOutput
       });
 
       if (selectedOutput === 1) {
         setOutputData1(result);
+        console.log('✅ Output set to Port 1');
       } else {
         setOutputData2(result);
+        console.log('✅ Output set to Port 2');
       }
     } catch (error) {
-      console.error('Mixing error:', error);
+      console.error('❌ Mixing error:', error);
+      console.error('Error stack:', error.stack);
       alert('Error during mixing: ' + error.message);
-      throw error;
     }
   };
 
@@ -170,10 +185,9 @@ function App() {
           <ComponentMixer 
             processors={getProcessorsArray()}
             onMix={handleMix}
-            onRegionConfigChange={handleRegionConfigChange}
             mixMode={mixMode}
-            onMixModeChange={setMixMode}
             weights={weights}
+            regionConfig={regionConfig}
             key={updateTrigger}
           />
         </section>
@@ -189,6 +203,7 @@ function App() {
             onMixModeChange={setMixMode}
             regionType={regionType}
             onRegionTypeChange={setRegionType}
+            onRegionConfigChange={handleRegionConfigChange}
           />
         </aside>
       </main>

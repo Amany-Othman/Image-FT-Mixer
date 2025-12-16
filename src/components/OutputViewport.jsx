@@ -1,5 +1,5 @@
-// OutputViewport.jsx - Light theme matching your design
-import React, { useRef, useEffect } from "react";
+// OutputViewport.jsx - With integrated region controls
+import React, { useRef, useEffect, useState } from "react";
 import "./OutputViewport.css";
 
 function OutputViewport({
@@ -11,9 +11,34 @@ function OutputViewport({
   onMixModeChange,
   regionType,
   onRegionTypeChange,
+  onRegionConfigChange, // NEW: to update region config
 }) {
   const canvas1Ref = useRef(null);
   const canvas2Ref = useRef(null);
+  
+  // Region filter state
+  const [regionEnabled, setRegionEnabled] = useState(false);
+  const [regionSize, setRegionSize] = useState(50);
+
+  // Notify parent of region config changes
+  useEffect(() => {
+    if (onRegionConfigChange) {
+      const config = {
+        enabled: regionEnabled,
+        type: regionType,
+        size: regionSize,
+      };
+      onRegionConfigChange(config);
+    }
+  }, [regionEnabled, regionType, regionSize, onRegionConfigChange]);
+
+  const handleRegionEnabledChange = (e) => {
+    setRegionEnabled(e.target.checked);
+  };
+
+  const handleRegionSizeChange = (e) => {
+    setRegionSize(parseInt(e.target.value));
+  };
 
   // Draw output 1
   useEffect(() => {
@@ -82,7 +107,7 @@ function OutputViewport({
         </select>
       </div>
 
-      {/* Region Selector (was ROI) */}
+      {/* Region Type Selector */}
       <div className="control-row">
         <label className="control-label">Region:</label>
         <select
@@ -94,6 +119,37 @@ function OutputViewport({
           <option value="outer">Outer</option>
         </select>
       </div>
+
+      {/* Enable Region Filter Checkbox */}
+      <div className="control-row checkbox-row">
+        <label className="checkbox-label">
+          <input
+            type="checkbox"
+            checked={regionEnabled}
+            onChange={handleRegionEnabledChange}
+          />
+          <span>Enable Region Filter</span>
+        </label>
+      </div>
+
+      {/* Region Size Slider (appears when enabled) */}
+      {regionEnabled && (
+        <div className="control-row slider-row">
+          <label className="control-label">Size:</label>
+          <div className="slider-container">
+            <input
+              type="range"
+              min="10"
+              max="100"
+              step="5"
+              value={regionSize}
+              onChange={handleRegionSizeChange}
+              className="region-slider"
+            />
+            <span className="slider-value">{regionSize}%</span>
+          </div>
+        </div>
+      )}
 
       {/* View/Port Selector */}
       <div className="control-row">
