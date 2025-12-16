@@ -1,5 +1,4 @@
 // ComponentMixer.jsx - Updated to receive weights as prop (no internal weight sliders)
-
 import React, { useState, useEffect, useRef } from "react";
 import RegionSelector from "./RegionSelector";
 import "./ComponentMixer.css";
@@ -14,7 +13,6 @@ function ComponentMixer({
 }) {
   const [regionConfig, setRegionConfig] = useState(null);
   const [isMixing, setIsMixing] = useState(false);
-
   const cancelRef = useRef(false);
   const debounceTimerRef = useRef(null);
   const mixCountRef = useRef(0);
@@ -44,7 +42,6 @@ function ComponentMixer({
   const handleRegionChange = (config) => {
     setRegionConfig(config);
     console.log("Region config updated:", config);
-
     if (onRegionConfigChange) {
       onRegionConfigChange(config);
     }
@@ -120,16 +117,6 @@ function ComponentMixer({
           {/* Region Selection */}
           <div className="mixer-section">
             <RegionSelector onRegionChange={handleRegionChange} />
-          </div>
-
-          {/* Weight Sum Display */}
-          <div className="mixer-section">
-            <div className="weight-sum">
-              Total: {(weights.reduce((a, b) => a + b, 0) * 100).toFixed(0)}%
-              {Math.abs(weights.reduce((a, b) => a + b, 0) - 1.0) > 0.01 && (
-                <span className="sum-warning"> (Should be 100%)</span>
-              )}
-            </div>
           </div>
         </>
       )}
