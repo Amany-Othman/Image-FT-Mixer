@@ -1,4 +1,4 @@
-// FourierMixer.js - FIXED VERSION
+// FourierMixer.js - Complete FFT mixing logic with region selection
 
 import FFT from 'fft.js';
 
@@ -7,18 +7,44 @@ class FourierMixer {
     this.processors = [];
     this.mixMode = 'magnitude-phase';
     this.weights = [0.25, 0.25, 0.25, 0.25];
-    this.regionConfig = null; // NEW: Region selection config
+    this.regionConfig = null;
   }
 
+  // ==================== CONFIGURATION ====================
+  
+  /**
+   * Set the image processors to mix
+   * @param {Array<ImageProcessor>} processors - Array of processors with FFT data
+   */
   setProcessors(processors) {
     this.processors = processors.filter(p => p && p.hasFFT());
+    console.log(`Set ${this.processors.length} processors for mixing`);
   }
 
+  /**
+   * Set the mixing mode
+   * @param {string} mode - 'magnitude-phase' or 'real-imaginary'
+   */
   setMixMode(mode) {
-    this.mixMode = mode;
+    if (mode !== 'magnitude-phase' && mode !== 'real-imaginary') {
+      console.warn(`Invalid mix mode: ${mode}. Using magnitude-phase.`);
+      this.mixMode = 'magnitude-phase';
+    } else {
+      this.mixMode = mode;
+    }
+    console.log(`Mix mode set to: ${this.mixMode}`);
   }
 
+  /**
+   * Set mixing weights for each processor
+   * Automatically normalizes weights to sum to 1.0
+   * @param {Array<number>} weights - Weight for each processor
+   */
   setWeights(weights) {
+    if (weights.length !== this.processors.length && this.processors.length > 0) {
+      console.warn(`Weight count (${weights.length}) doesn't match processor count (${this.processors.length})`);
+    }
+    
     // Normalize weights to sum to 1.0
     const sum = weights.reduce((a, b) => a + b, 0);
     if (sum === 0) {
@@ -30,12 +56,25 @@ class FourierMixer {
     console.log('Normalized weights:', this.weights);
   }
 
-  // NEW: Set region selection configuration
+  /**
+   * Set region selection configuration
+   * @param {Object} config - Region configuration
+   * @param {boolean} config.enabled - Whether region filtering is enabled
+   * @param {string} config.type - 'inner' or 'outer'
+   * @param {number} config.size - Region size as percentage (0-100)
+   */
   setRegionConfig(config) {
     this.regionConfig = config;
     console.log('Region config:', config);
   }
 
+  // ==================== MIXING ====================
+  
+  /**
+   * Mix the configured processors
+   * @returns {Object} Mixed image data with width and height
+   * @throws {Error} If no processors or dimension mismatch
+   */
   mix() {
     if (this.processors.length === 0) {
       throw new Error('No images with FFT data to mix');
@@ -52,6 +91,8 @@ class FourierMixer {
         throw new Error('All images must have the same dimensions');
       }
     }
+
+    console.log(`Mixing ${this.processors.length} images in ${this.mixMode} mode`);
 
     let mixedComplexData;
 
@@ -71,7 +112,15 @@ class FourierMixer {
     };
   }
 
-  // FIXED: Mix using magnitude and phase with optional region selection
+  // ==================== MAGNITUDE/PHASE MIXING ====================
+  
+  /**
+   * Mix using magnitude and phase components
+   * Uses weighted average for magnitude and circular mean for phase
+   * @param {number} fftWidth - FFT width
+   * @param {number} fftHeight - FFT height
+   * @returns {Float64Array} Mixed complex data
+   */
   mixMagnitudePhase(fftWidth, fftHeight) {
     const size = fftWidth * fftHeight;
     const mixedComplex = new Float64Array(size * 2);
@@ -96,7 +145,7 @@ class FourierMixer {
       let sumCosPhase = 0;
       let sumSinPhase = 0;
 
-      // Weighted sum of magnitude and CIRCULAR mean of phase
+      // Weighted sum of magnitude and circular mean of phase
       for (let j = 0; j < this.processors.length; j++) {
         const fft = this.processors[j].fft;
         const weight = this.weights[j];
@@ -114,8 +163,10 @@ class FourierMixer {
         sumSinPhase += Math.sin(phase) * weight;
       }
 
+      // Circular mean for phase
       const mixedPhase = Math.atan2(sumSinPhase, sumCosPhase);
 
+      // Convert back to complex form
       const real = mixedMagnitude * Math.cos(mixedPhase);
       const imag = mixedMagnitude * Math.sin(mixedPhase);
 
@@ -126,7 +177,15 @@ class FourierMixer {
     return mixedComplex;
   }
 
-  // FIXED: Mix using real and imaginary with optional region selection
+  // ==================== REAL/IMAGINARY MIXING ====================
+  
+  /**
+   * Mix using real and imaginary components
+   * Uses simple weighted average
+   * @param {number} fftWidth - FFT width
+   * @param {number} fftHeight - FFT height
+   * @returns {Float64Array} Mixed complex data
+   */
   mixRealImaginary(fftWidth, fftHeight) {
     const size = fftWidth * fftHeight;
     const mixedComplex = new Float64Array(size * 2);
@@ -166,7 +225,14 @@ class FourierMixer {
     return mixedComplex;
   }
 
-  // NEW: Create mask for region selection
+  // ==================== REGION SELECTION ====================
+  
+  /**
+   * Create a mask for region selection (inner or outer frequencies)
+   * @param {number} width - FFT width
+   * @param {number} height - FFT height
+   * @returns {Uint8Array} Binary mask (1 = include, 0 = exclude)
+   */
   createRegionMask(width, height) {
     const mask = new Uint8Array(width * height);
     const centerX = Math.floor(width / 2);
@@ -207,7 +273,15 @@ class FourierMixer {
     return mask;
   }
 
-  // Perform IFFT Shift (move zero frequency from center to corners)
+  // ==================== INVERSE FFT ====================
+  
+  /**
+   * Apply IFFT shift to move zero frequency from center to corners
+   * @param {Float64Array} complexData - Complex frequency data
+   * @param {number} width - Data width
+   * @param {number} height - Data height
+   * @returns {Float64Array} Shifted data
+   */
   ifftShift(complexData, width, height) {
     const shifted = new Float64Array(complexData.length);
     const halfW = Math.floor(width / 2);
@@ -230,7 +304,15 @@ class FourierMixer {
     return shifted;
   }
 
-  // FIXED: Perform 2D Inverse FFT
+  /**
+   * Perform 2D Inverse FFT to convert frequency domain back to spatial domain
+   * @param {Float64Array} complexData - Complex frequency data
+   * @param {number} fftWidth - FFT width
+   * @param {number} fftHeight - FFT height
+   * @param {number} outputWidth - Output image width
+   * @param {number} outputHeight - Output image height
+   * @returns {Uint8ClampedArray} Spatial domain image data (0-255)
+   */
   performIFFT(complexData, fftWidth, fftHeight, outputWidth, outputHeight) {
     console.log('Starting IFFT:', { fftWidth, fftHeight, outputWidth, outputHeight });
 
@@ -245,14 +327,17 @@ class FourierMixer {
     const afterCols = new Float64Array(fftWidth * fftHeight * 2);
 
     for (let x = 0; x < fftWidth; x++) {
+      // Extract column
       for (let y = 0; y < fftHeight; y++) {
         colData[y * 2] = shiftedData[y * fftWidth * 2 + x * 2];
         colData[y * 2 + 1] = shiftedData[y * fftWidth * 2 + x * 2 + 1];
       }
 
+      // Perform IFFT
       const colOutput = new Float64Array(fftHeight * 2);
       fftCol.inverseTransform(colOutput, colData);
 
+      // Store result
       for (let y = 0; y < fftHeight; y++) {
         afterCols[y * fftWidth * 2 + x * 2] = colOutput[y * 2];
         afterCols[y * fftWidth * 2 + x * 2 + 1] = colOutput[y * 2 + 1];
@@ -264,35 +349,51 @@ class FourierMixer {
     const result = new Float64Array(fftWidth * fftHeight * 2);
 
     for (let y = 0; y < fftHeight; y++) {
+      // Extract row
       for (let x = 0; x < fftWidth; x++) {
         rowData[x * 2] = afterCols[y * fftWidth * 2 + x * 2];
         rowData[x * 2 + 1] = afterCols[y * fftWidth * 2 + x * 2 + 1];
       }
 
+      // Perform IFFT
       const rowOutput = new Float64Array(fftWidth * 2);
       fftRow.inverseTransform(rowOutput, rowData);
 
+      // Store result
       for (let x = 0; x < fftWidth; x++) {
         result[y * fftWidth * 2 + x * 2] = rowOutput[x * 2];
         result[y * fftWidth * 2 + x * 2 + 1] = rowOutput[x * 2 + 1];
       }
     }
 
-    // CRITICAL FIX: Take REAL part only, not magnitude!
-    // For grayscale images, imaginary part should be near zero
+    // Convert complex result to grayscale image
+    return this.complexToGrayscale(result, fftWidth, fftHeight, outputWidth, outputHeight);
+  }
+
+  /**
+   * Convert complex IFFT result to grayscale image
+   * Takes only the real part and normalizes to 0-255
+   * @param {Float64Array} complexResult - Complex IFFT result
+   * @param {number} fftWidth - FFT width
+   * @param {number} fftHeight - FFT height
+   * @param {number} outputWidth - Output width
+   * @param {number} outputHeight - Output height
+   * @returns {Uint8ClampedArray} Grayscale image (0-255)
+   */
+  complexToGrayscale(complexResult, fftWidth, fftHeight, outputWidth, outputHeight) {
     const imageData = new Uint8ClampedArray(outputWidth * outputHeight);
     
-    // Extract real parts
+    // Extract real parts (imaginary should be near zero for real images)
     const realValues = [];
     for (let y = 0; y < outputHeight; y++) {
       for (let x = 0; x < outputWidth; x++) {
         const idx = y * fftWidth + x;
-        const real = result[idx * 2];
+        const real = complexResult[idx * 2];
         realValues.push(real);
       }
     }
 
-    // FIXED: Find min/max without spread operator (causes stack overflow on large arrays)
+    // Find min/max without spread operator (avoids stack overflow)
     let min = realValues[0];
     let max = realValues[0];
     for (let i = 1; i < realValues.length; i++) {
@@ -316,7 +417,7 @@ class FourierMixer {
       imageData[i] = Math.max(0, Math.min(255, Math.round(normalized)));
     }
 
-    // Log statistics (without spread operator)
+    // Log statistics
     const sampleValues = Array.from(imageData.slice(0, 20));
     let sum = 0;
     let minVal = imageData[0];
@@ -340,8 +441,35 @@ class FourierMixer {
     return imageData;
   }
 
+  // ==================== UTILITY ====================
+  
+  /**
+   * Check if mixing is possible
+   * @returns {boolean} True if at least one processor has FFT data
+   */
   canMix() {
     return this.processors.length > 0;
+  }
+
+  /**
+   * Get number of processors ready for mixing
+   * @returns {number} Count of processors with FFT
+   */
+  getProcessorCount() {
+    return this.processors.length;
+  }
+
+  /**
+   * Get current configuration
+   * @returns {Object} Current mixer configuration
+   */
+  getConfig() {
+    return {
+      mixMode: this.mixMode,
+      weights: [...this.weights],
+      regionConfig: this.regionConfig ? { ...this.regionConfig } : null,
+      processorCount: this.processors.length
+    };
   }
 }
 

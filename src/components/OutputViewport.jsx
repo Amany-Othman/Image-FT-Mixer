@@ -1,7 +1,24 @@
-// OutputViewport.jsx - With improved region controls matching contrast slider design
+// OutputViewport.jsx - UI ONLY - No processing logic
+
 import React, { useRef, useEffect, useState } from "react";
 import "./OutputViewport.css";
 
+/**
+ * OutputViewport Component - Handles UI for output display and controls
+ * 
+ * Responsibilities:
+ * - Render output canvases
+ * - Display mixing mode selector
+ * - Display region filter controls
+ * - Handle user input events
+ * - Draw provided image data on canvas
+ * 
+ * Does NOT handle:
+ * - FFT calculations
+ * - Image mixing logic
+ * - Region mask creation
+ * - IFFT computation
+ */
 function OutputViewport({
   outputData1,
   outputData2,
@@ -16,11 +33,13 @@ function OutputViewport({
   const canvas1Ref = useRef(null);
   const canvas2Ref = useRef(null);
 
-  // Region filter state
+  // Region filter UI state
   const [regionEnabled, setRegionEnabled] = useState(false);
   const [regionSize, setRegionSize] = useState(50);
 
-  // Notify parent of region config changes
+  /**
+   * Notify parent of region configuration changes
+   */
   useEffect(() => {
     if (onRegionConfigChange) {
       const config = {
@@ -32,22 +51,33 @@ function OutputViewport({
     }
   }, [regionEnabled, regionType, regionSize, onRegionConfigChange]);
 
+  /**
+   * Handle region enabled toggle
+   */
   const handleRegionEnabledChange = (e) => {
     setRegionEnabled(e.target.checked);
   };
 
+  /**
+   * Handle region size slider change
+   */
   const handleRegionSizeChange = (e) => {
     setRegionSize(parseInt(e.target.value));
   };
 
-  // Calculate gradient that fills from LEFT to thumb position (0-100 range)
+  /**
+   * Calculate gradient for region size slider
+   * Maps 10-100 range to 0-100% for visual feedback
+   */
   const getRegionSliderGradient = () => {
-    // Map 10-100 range to 0-100% for gradient
     const percent = ((regionSize - 10) / (100 - 10)) * 100;
     return `linear-gradient(to right, #667eea 0%, #764ba2 ${percent}%, #e0e0e0 ${percent}%, #e0e0e0 100%)`;
   };
 
-  // Draw output 1
+  /**
+   * Draw output 1 on canvas when data changes
+   * Converts grayscale array to RGBA ImageData
+   */
   useEffect(() => {
     if (!outputData1 || !canvas1Ref.current) return;
 
@@ -62,18 +92,22 @@ function OutputViewport({
       outputData1.height
     );
 
+    // Convert grayscale to RGBA
     for (let i = 0; i < outputData1.imageData.length; i++) {
       const val = outputData1.imageData[i];
-      imageData.data[i * 4] = val;
-      imageData.data[i * 4 + 1] = val;
-      imageData.data[i * 4 + 2] = val;
-      imageData.data[i * 4 + 3] = 255;
+      imageData.data[i * 4] = val;       // Red
+      imageData.data[i * 4 + 1] = val;   // Green
+      imageData.data[i * 4 + 2] = val;   // Blue
+      imageData.data[i * 4 + 3] = 255;   // Alpha
     }
 
     ctx.putImageData(imageData, 0, 0);
   }, [outputData1]);
 
-  // Draw output 2
+  /**
+   * Draw output 2 on canvas when data changes
+   * Converts grayscale array to RGBA ImageData
+   */
   useEffect(() => {
     if (!outputData2 || !canvas2Ref.current) return;
 
@@ -88,12 +122,13 @@ function OutputViewport({
       outputData2.height
     );
 
+    // Convert grayscale to RGBA
     for (let i = 0; i < outputData2.imageData.length; i++) {
       const val = outputData2.imageData[i];
-      imageData.data[i * 4] = val;
-      imageData.data[i * 4 + 1] = val;
-      imageData.data[i * 4 + 2] = val;
-      imageData.data[i * 4 + 3] = 255;
+      imageData.data[i * 4] = val;       // Red
+      imageData.data[i * 4 + 1] = val;   // Green
+      imageData.data[i * 4 + 2] = val;   // Blue
+      imageData.data[i * 4 + 3] = 255;   // Alpha
     }
 
     ctx.putImageData(imageData, 0, 0);
@@ -101,7 +136,7 @@ function OutputViewport({
 
   return (
     <div className="output-panel">
-      {/* Mode Selector */}
+      {/* Mix Mode Selector */}
       <div className="control-row">
         <label className="control-label">Mode:</label>
         <select
@@ -127,7 +162,7 @@ function OutputViewport({
         </select>
       </div>
 
-      {/* Enable Region Filter Toggle - Improved Design */}
+      {/* Enable Region Filter Toggle */}
       <div className="region-filter-toggle">
         <label className="toggle-switch">
           <input
@@ -140,7 +175,7 @@ function OutputViewport({
         <span className="toggle-label">Enable Region Filter</span>
       </div>
 
-      {/* Region Size Slider - Matching Contrast Slider Design */}
+      {/* Region Size Slider - Only shown when enabled */}
       {regionEnabled && (
         <div className="region-size-control">
           <div className="slider-label-row">
@@ -162,7 +197,7 @@ function OutputViewport({
         </div>
       )}
 
-      {/* View/Port Selector */}
+      {/* Output Port Selector */}
       <div className="control-row">
         <label className="control-label">View:</label>
         <div className="radio-group">
@@ -193,7 +228,7 @@ function OutputViewport({
         </div>
       </div>
 
-      {/* Output Previews */}
+      {/* Output Preview Canvases */}
       <div className="output-previews">
         {/* Port 1 Preview */}
         <div

@@ -1,5 +1,6 @@
-// ImageProcessor.js - All image manipulation logic here!
+// ImageProcessor.js - Complete image processing logic
 import FourierTransform from './FourierTransform';
+
 class ImageProcessor {
   constructor() {
     this.rawImageData = null;      // Original image
@@ -11,57 +12,14 @@ class ImageProcessor {
     this.contrast = 0;      // -100 to 100
     this.originalGrayscale = null;  // Store original for reset
   }
-// Compute FFT for the image
-  computeFFT() {
-    if (!this.grayscaleData) {
-      console.warn('No grayscale data to compute FFT');
-      return;
-    }
-    
-    // Create FFT instance
-    this.fft = new FourierTransform(this.width, this.height);
-    
-    // Compute FFT
-    this.fft.compute2DFFT(this.grayscaleData);
-    
-    return this.fft;
-  }
 
-  // Get FFT component for display
-  getFFTComponent(componentType) {
-    if (!this.fft) {
-      console.warn('FFT not computed yet');
-      return null;
-    }
-    
-    switch (componentType) {
-      case 'magnitude':
-        return this.fft.getMagnitudeDisplay();
-      case 'phase':
-        return this.fft.getPhaseDisplay();
-      case 'real':
-        return this.fft.getRealDisplay();
-      case 'imaginary':
-        return this.fft.getImaginaryDisplay();
-      default:
-        return null;
-    }
-  }
-  // Get FFT component with brightness/contrast applied
-  getFFTComponentWithAdjustments(componentType, brightness, contrast) {
-    if (!this.fft) {
-      console.warn('FFT not computed yet');
-      return null;
-    }
-    
-    return this.fft.getComponentWithAdjustments(componentType, brightness, contrast);
-  }
-
-  // Check if FFT has been computed
-  hasFFT() {
-    return this.fft !== null && this.fft.hasFFT();
-  }
-  // Load image from file
+  // ==================== IMAGE LOADING ====================
+  
+  /**
+   * Load image from file
+   * @param {File} file - Image file to load
+   * @returns {Promise<Object>} Image metadata
+   */
   async loadImage(file) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -88,6 +46,7 @@ class ImageProcessor {
           // Convert to grayscale immediately
           this.convertToGrayscale();
           this.originalGrayscale = new Uint8ClampedArray(this.grayscaleData);
+          
           resolve({
             width: this.width,
             height: this.height,
@@ -104,7 +63,11 @@ class ImageProcessor {
     });
   }
 
-  // Convert colored image to grayscale
+  // ==================== COLOR CONVERSION ====================
+  
+  /**
+   * Convert colored image to grayscale using luminosity method
+   */
   convertToGrayscale() {
     if (!this.rawImageData) return;
     
@@ -126,27 +89,13 @@ class ImageProcessor {
     this.grayscaleData = grayscale;
   }
 
-  // Get grayscale image as ImageData (for displaying on canvas)
-  getGrayscaleImageData() {
-    if (!this.grayscaleData) return null;
-    
-    const imageData = new ImageData(this.width, this.height);
-    const data = imageData.data;
-    
-    for (let i = 0; i < this.grayscaleData.length; i++) {
-      const gray = this.grayscaleData[i];
-      const idx = i * 4;
-      
-      data[idx] = gray;      // Red
-      data[idx + 1] = gray;  // Green
-      data[idx + 2] = gray;  // Blue
-      data[idx + 3] = 255;   // Alpha (fully opaque)
-    }
-    
-    return imageData;
-  }
-
-  // Resize image to new dimensions
+  // ==================== IMAGE RESIZING ====================
+  
+  /**
+   * Resize image to new dimensions using nearest neighbor
+   * @param {number} newWidth - Target width
+   * @param {number} newHeight - Target height
+   */
   resize(newWidth, newHeight) {
     if (!this.grayscaleData) return;
     
@@ -168,7 +117,7 @@ class ImageProcessor {
     }
     
     this.grayscaleData = resized;
-    this.originalGrayscale = new Uint8ClampedArray(resized); // STORE ORIGINAL
+    this.originalGrayscale = new Uint8ClampedArray(resized);
     this.width = newWidth;
     this.height = newHeight;
 
@@ -177,26 +126,41 @@ class ImageProcessor {
     this.contrast = 0;
   }
 
-    // Apply brightness adjustment
+  // ==================== BRIGHTNESS/CONTRAST ADJUSTMENTS ====================
+  
+  /**
+   * Adjust brightness by delta
+   * @param {number} delta - Change in brightness (-100 to 100)
+   */
   adjustBrightness(delta) {
     this.brightness = Math.max(-100, Math.min(100, this.brightness + delta));
     this.applyAdjustments();
   }
 
-  // Apply contrast adjustment
+  /**
+   * Adjust contrast by delta
+   * @param {number} delta - Change in contrast (-100 to 100)
+   */
   adjustContrast(delta) {
     this.contrast = Math.max(-100, Math.min(100, this.contrast + delta));
     this.applyAdjustments();
   }
 
-  // Set brightness and contrast directly
+  /**
+   * Set brightness and contrast directly
+   * @param {number} brightness - Brightness value (-100 to 100)
+   * @param {number} contrast - Contrast value (-100 to 100)
+   */
   setBrightnessContrast(brightness, contrast) {
     this.brightness = Math.max(-100, Math.min(100, brightness));
     this.contrast = Math.max(-100, Math.min(100, contrast));
     this.applyAdjustments();
   }
 
-  // Apply brightness and contrast to image
+  /**
+   * Apply brightness and contrast adjustments to image
+   * Always works from original data to avoid cumulative errors
+   */
   applyAdjustments() {
     if (!this.originalGrayscale) return;
     
@@ -221,7 +185,9 @@ class ImageProcessor {
     }
   }
 
-  // Reset adjustments
+  /**
+   * Reset brightness and contrast to defaults
+   */
   resetAdjustments() {
     this.brightness = 0;
     this.contrast = 0;
@@ -230,15 +196,165 @@ class ImageProcessor {
     }
   }
 
-  // Get current adjustments
+  /**
+   * Get current adjustment values
+   * @returns {Object} Current brightness and contrast
+   */
   getAdjustments() {
     return {
       brightness: this.brightness,
       contrast: this.contrast
     };
   }
+
+  // ==================== FFT COMPUTATION ====================
+  
+  /**
+   * Compute FFT for the current image
+   * @returns {FourierTransform} FFT instance
+   */
+  computeFFT() {
+    if (!this.grayscaleData) {
+      console.warn('No grayscale data to compute FFT');
+      return;
+    }
+    
+    // Create FFT instance
+    this.fft = new FourierTransform(this.width, this.height);
+    
+    // Compute FFT
+    this.fft.compute2DFFT(this.grayscaleData);
+    
+    return this.fft;
+  }
+
+  /**
+   * Check if FFT has been computed
+   * @returns {boolean} True if FFT exists
+   */
+  hasFFT() {
+    return this.fft !== null && this.fft.hasFFT();
+  }
+
+  // ==================== FFT COMPONENT RETRIEVAL ====================
+  
+  /**
+   * Get FFT component for display
+   * @param {string} componentType - Type: 'magnitude', 'phase', 'real', 'imaginary'
+   * @returns {Uint8ClampedArray|null} Display data
+   */
+  getFFTComponent(componentType) {
+    if (!this.fft) {
+      console.warn('FFT not computed yet');
+      return null;
+    }
+    
+    switch (componentType) {
+      case 'magnitude':
+        return this.fft.getMagnitudeDisplay();
+      case 'phase':
+        return this.fft.getPhaseDisplay();
+      case 'real':
+        return this.fft.getRealDisplay();
+      case 'imaginary':
+        return this.fft.getImaginaryDisplay();
+      default:
+        return null;
+    }
+  }
+
+  /**
+   * Get FFT component with brightness/contrast adjustments
+   * @param {string} componentType - Component type
+   * @param {number} brightness - Brightness adjustment
+   * @param {number} contrast - Contrast adjustment
+   * @returns {Uint8ClampedArray|null} Adjusted display data
+   */
+  getFFTComponentWithAdjustments(componentType, brightness, contrast) {
+    if (!this.fft) {
+      console.warn('FFT not computed yet');
+      return null;
+    }
+    
+    return this.fft.getComponentWithAdjustments(componentType, brightness, contrast);
+  }
+
+  // ==================== IMAGE DATA RETRIEVAL ====================
+  
+  /**
+   * Get grayscale image as ImageData for canvas display
+   * @returns {ImageData|null} Image data for rendering
+   */
+  getGrayscaleImageData() {
+    if (!this.grayscaleData) return null;
+    
+    const imageData = new ImageData(this.width, this.height);
+    const data = imageData.data;
+    
+    for (let i = 0; i < this.grayscaleData.length; i++) {
+      const gray = this.grayscaleData[i];
+      const idx = i * 4;
+      
+      data[idx] = gray;      // Red
+      data[idx + 1] = gray;  // Green
+      data[idx + 2] = gray;  // Blue
+      data[idx + 3] = 255;   // Alpha (fully opaque)
+    }
+    
+    return imageData;
+  }
+
+  /**
+   * Get grayscale data as Uint8ClampedArray
+   * @returns {Uint8ClampedArray|null} Raw grayscale data
+   */
+  getGrayscaleData() {
+    return this.grayscaleData;
+  }
+
+  /**
+   * Convert Uint8ClampedArray to ImageData for canvas rendering
+   * @param {Uint8ClampedArray} data - Grayscale pixel data
+   * @param {number} width - Image width
+   * @param {number} height - Image height
+   * @returns {ImageData} Canvas-ready image data
+   */
+  static arrayToImageData(data, width, height) {
+    const imageData = new ImageData(width, height);
+    const pixels = imageData.data;
+    
+    for (let i = 0; i < data.length; i++) {
+      const gray = data[i];
+      const idx = i * 4;
+      
+      pixels[idx] = gray;      // Red
+      pixels[idx + 1] = gray;  // Green
+      pixels[idx + 2] = gray;  // Blue
+      pixels[idx + 3] = 255;   // Alpha
+    }
+    
+    return imageData;
+  }
+
+  // ==================== STATE CHECKS ====================
+  
+  /**
+   * Check if processor has an image loaded
+   * @returns {boolean} True if image exists
+   */
   hasImage() {
     return this.grayscaleData !== null;
+  }
+
+  /**
+   * Get image dimensions
+   * @returns {Object} Width and height
+   */
+  getDimensions() {
+    return {
+      width: this.width,
+      height: this.height
+    };
   }
 }
 

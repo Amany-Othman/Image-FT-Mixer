@@ -1,7 +1,23 @@
-// ComponentMixer.jsx - Fixed with proper dependency tracking
+// ComponentMixer.jsx - UI ONLY - No processing logic
+
 import React, { useState, useEffect, useRef } from "react";
 import "./ComponentMixer.css";
 
+/**
+ * ComponentMixer Component - Handles UI for triggering mixing operations
+ * 
+ * Responsibilities:
+ * - Display mixing status
+ * - Show available processor count
+ * - Trigger mixing on setting changes
+ * - Handle debouncing and cancellation
+ * 
+ * Does NOT handle:
+ * - FFT calculations
+ * - Image processing
+ * - Weight normalization
+ * - Region mask creation
+ */
 function ComponentMixer({
   processors,
   onMix,
@@ -14,14 +30,18 @@ function ComponentMixer({
   const debounceTimerRef = useRef(null);
   const mixCountRef = useRef(0);
 
+  // Filter processors that have FFT computed
   const availableProcessors = processors.filter((p) => p && p.hasFFT());
   const canMix = availableProcessors.length > 0;
 
-  // Create a stable string representation of dependencies for comparison
+  // Create stable string representations for dependency tracking
   const weightsKey = JSON.stringify(weights);
   const regionConfigKey = regionConfig ? JSON.stringify(regionConfig) : 'null';
 
-  // Auto-trigger mix when settings change
+  /**
+   * Auto-trigger mix when settings change
+   * Debounces to avoid excessive mixing during slider adjustments
+   */
   useEffect(() => {
     if (!canMix) {
       console.log('Cannot mix - no processors available');
@@ -35,14 +55,17 @@ function ComponentMixer({
       processorCount: availableProcessors.length
     });
 
+    // Clear existing debounce timer
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
 
+    // Schedule new mix operation with 300ms debounce
     debounceTimerRef.current = setTimeout(() => {
       performMix();
     }, 300);
 
+    // Cleanup on unmount or dependency change
     return () => {
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
@@ -50,7 +73,12 @@ function ComponentMixer({
     };
   }, [weightsKey, mixMode, regionConfigKey, canMix]);
 
+  /**
+   * Perform the mixing operation
+   * Handles cancellation of previous operations and UI state
+   */
   const performMix = async () => {
+    // Cancel any ongoing mix operation
     if (isMixing) {
       console.log('Already mixing, cancelling previous operation');
       cancelRef.current = true;
@@ -69,16 +97,19 @@ function ComponentMixer({
     });
 
     try {
+      // Perform mix asynchronously to avoid blocking UI
       await new Promise((resolve, reject) => {
         setTimeout(() => {
           try {
+            // Check if cancelled
             if (cancelRef.current) {
               console.log(`❌ Mix #${currentMixId} cancelled`);
               resolve();
               return;
             }
 
-            // Call the mix function with all parameters
+            // Call parent's mix handler with all parameters
+            // Parent is responsible for configuring the mixer and executing
             onMix(availableProcessors, weights, mixMode, regionConfig);
             
             console.log(`✅ Mix #${currentMixId} completed successfully`);
@@ -98,6 +129,9 @@ function ComponentMixer({
     }
   };
 
+  /**
+   * Cleanup on unmount
+   */
   useEffect(() => {
     return () => {
       if (debounceTimerRef.current) {
