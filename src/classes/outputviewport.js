@@ -1,90 +1,69 @@
-// OutputViewport.js - Stage 5: Enhanced with selection indicator
-
+// OutputViewport.js
+// This component is responsible for displaying the OUTPUT image
+// and applying brightness & contrast adjustments on the result of the mixer
 import React, { useRef, useEffect, useState } from 'react';
 import './OutputViewport.css';
 
-function OutputViewport({ id, outputData, isSelected }) {
-  const canvasRef = useRef(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [brightness, setBrightness] = useState(0);
+function OutputViewport({ id, outputData, isSelected }) {   
+  //id : no of viewport , output data (width , height , image data )     , is selected boolean
+  // Reference to the HTML canvas element
+  // We use canvas because we want to manually draw pixel values
+  const canvasRef = useRef(null); 
+  const [brightness, setBrightness] = useState(0); // State for brightness adjustment (0 = original image)
   const [contrast, setContrast] = useState(0);
 
-  // Draw output image with brightness/contrast
+
+
+  // useEffect:
+  // This runs whenever:
+  // 1) outputData changes (new mixed image)
+  // 2) brightness changes
+  // 3) contrast changes
   useEffect(() => {
-    if (!outputData || !canvasRef.current) return;
+    if (!outputData || !canvasRef.current) return; // If there is no output image OR canvas is not mounted yet (Safety check)
 
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
+    const canvas = canvasRef.current;   // Get the canvas element
+    const ctx = canvas.getContext('2d'); // Get 2D drawing context from canvas
 
-    canvas.width = outputData.width;
+    canvas.width = outputData.width;// Set canvas size equal to image size , This is important to avoid scaling distortion
     canvas.height = outputData.height;
 
-    // Apply brightness/contrast adjustments
+    // Apply brightness and contrast on grayscale image data ,   outputData.imageData contains one value per pixel (grayscale)
     const adjustedData = applyAdjustments(outputData.imageData, brightness, contrast);
 
-    // Create ImageData
+
+    // Create an ImageData object to store RGBA values
+    // Canvas requires 4 values per pixel (R, G, B, A)
     const imageData = ctx.createImageData(outputData.width, outputData.height);
     for (let i = 0; i < adjustedData.length; i++) {
       const gray = adjustedData[i];
-      const idx = i * 4;
-      imageData.data[idx] = gray;
-      imageData.data[idx + 1] = gray;
-      imageData.data[idx + 2] = gray;
-      imageData.data[idx + 3] = 255;
+      const idx = i * 4;   // Each pixel occupies 4 consecutive indices in imageData
+      imageData.data[idx] = gray;  //red   // Assign the same gray value to R, G, and B  ,This keeps the image in grayscale
+      imageData.data[idx + 1] = gray;//green
+      imageData.data[idx + 2] = gray;//blue
+      imageData.data[idx + 3] = 255;//fully opaque
     }
 
-    ctx.putImageData(imageData, 0, 0);
+    ctx.putImageData(imageData, 0, 0);    // Draw the processed image data onto the canvas
+    // (0,0) means draw from the top-left corner
   }, [outputData, brightness, contrast]);
 
   // Apply brightness and contrast
   const applyAdjustments = (data, brightness, contrast) => {
-    const adjusted = new Uint8ClampedArray(data.length);
-    const contrastFactor = (259 * (contrast + 255)) / (255 * (259 - contrast));
+    const adjusted = new Uint8ClampedArray(data.length);// Uint8ClampedArray ensures values stay between 0 and 255
+    const contrastFactor = (259 * (contrast + 255)) / (255 * (259 - contrast)); // Standard contrast adjustment formula
 
     for (let i = 0; i < data.length; i++) {
-      let pixel = data[i];
-      pixel = contrastFactor * (pixel - 128) + 128;
-      pixel = pixel + brightness;
-      adjusted[i] = Math.max(0, Math.min(255, pixel));
+      let pixel = data[i];// Original grayscale pixel value
+      pixel = contrastFactor * (pixel - 128) + 128; // Apply contrast around mid-gray (128)
+      pixel = pixel + brightness; // Apply brightness
+      adjusted[i] = Math.max(0, Math.min(255, pixel));// Clamp the value between 0 and 255
     }
 
     return adjusted;
   };
 
-  // Mouse drag handlers for brightness/contrast
-  const handleMouseDown = (e) => {
-    if (!outputData) return;
-    setIsDragging(true);
-    setDragStart({ x: e.clientX, y: e.clientY });
-  };
-
-  const handleMouseMove = (e) => {
-    if (!isDragging) return;
-
-    const deltaX = e.clientX - dragStart.x;
-    const deltaY = e.clientY - dragStart.y;
-
-    // Horizontal = contrast, Vertical = brightness
-    const contrastDelta = deltaX * 0.5;
-    const brightnessDelta = -deltaY * 0.5;
-
-    setBrightness(prev => Math.max(-100, Math.min(100, prev + brightnessDelta)));
-    setContrast(prev => Math.max(-100, Math.min(100, prev + contrastDelta)));
-
-    setDragStart({ x: e.clientX, y: e.clientY });
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-
-  // Reset adjustments
-  const handleReset = () => {
-    setBrightness(0);
-    setContrast(0);
-  };
-
+  
   return (
     <div className={`output-viewport ${isSelected ? 'selected' : ''}`}>
       <div className="viewport-header">
@@ -96,13 +75,7 @@ function OutputViewport({ id, outputData, isSelected }) {
       </div>
 
       <div className="viewport-content">
-        <div 
-          className="canvas-container"
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
-        >
+        <div className="canvas-container">
           {outputData ? (
             <canvas ref={canvasRef} className="output-canvas" />
           ) : (
@@ -125,7 +98,7 @@ function OutputViewport({ id, outputData, isSelected }) {
             >
               Reset Adjustments
             </button>
-            <p className="hint">💡 Drag: ↕️ Brightness | ↔️ Contrast</p>
+            <p className="hint">💡 Adjust brightness and contrast using sliders</p>
           </div>
         )}
       </div>
