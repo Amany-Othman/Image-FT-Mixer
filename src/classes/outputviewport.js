@@ -56,7 +56,7 @@ function OutputViewport({ id, outputData, isSelected }) {
     for (let i = 0; i < data.length; i++) {
       let pixel = data[i];// Original grayscale pixel value
       pixel = contrastFactor * (pixel - 128) + 128; // Apply contrast around mid-gray (128)
-      pixel = pixel + brightness; // Apply brightness
+      pixel = pixel + brightness;
       adjusted[i] = Math.max(0, Math.min(255, pixel));// Clamp the value between 0 and 255
     }
 

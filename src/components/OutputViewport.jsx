@@ -20,22 +20,22 @@ import "./OutputViewport.css";
  * - IFFT computation
  */
 function OutputViewport({
-  outputData1,
-  outputData2,
-  selectedOutput,
-  onOutputSelect,
-  mixMode,
-  onMixModeChange,
-  regionType,
-  onRegionTypeChange,
-  onRegionConfigChange,
+  outputData1,       // Grayscale image data for port 1
+  outputData2,       // Grayscale image data for port 2
+  selectedOutput,    // Currently selected port (1 or 2)
+  onOutputSelect,    // Callback to notify parent when user selects a port
+  mixMode,           // Current mixing mode
+  onMixModeChange,   // Callback to notify parent when mix mode changes
+  regionType,        // Currently selected region type (inner/outer)
+  onRegionTypeChange,// Callback when region type changes
+  onRegionConfigChange, // Callback to notify parent when region config changes
 }) {
-  const canvas1Ref = useRef(null);
-  const canvas2Ref = useRef(null);
+  const canvas1Ref = useRef(null); // Reference to Port 1 canvas
+  const canvas2Ref = useRef(null); // Reference to Port 2 canvas
 
   // Region filter UI state
-  const [regionEnabled, setRegionEnabled] = useState(false);
-  const [regionSize, setRegionSize] = useState(50);
+  const [regionEnabled, setRegionEnabled] = useState(false); // Whether region filter is enabled
+  const [regionSize, setRegionSize] = useState(50);          // Current region size (percentage)
 
   /**
    * Notify parent of region configuration changes
@@ -84,6 +84,7 @@ function OutputViewport({
     const canvas = canvas1Ref.current;
     const ctx = canvas.getContext("2d");
 
+    // Set canvas size to match image size
     canvas.width = outputData1.width;
     canvas.height = outputData1.height;
 
@@ -98,10 +99,10 @@ function OutputViewport({
       imageData.data[i * 4] = val;       // Red
       imageData.data[i * 4 + 1] = val;   // Green
       imageData.data[i * 4 + 2] = val;   // Blue
-      imageData.data[i * 4 + 3] = 255;   // Alpha
+      imageData.data[i * 4 + 3] = 255;   // Alpha (fully opaque)
     }
 
-    ctx.putImageData(imageData, 0, 0);
+    ctx.putImageData(imageData, 0, 0); // Draw the image on canvas
   }, [outputData1]);
 
   /**
@@ -122,7 +123,6 @@ function OutputViewport({
       outputData2.height
     );
 
-    // Convert grayscale to RGBA
     for (let i = 0; i < outputData2.imageData.length; i++) {
       const val = outputData2.imageData[i];
       imageData.data[i * 4] = val;       // Red
