@@ -1,4 +1,4 @@
-// ImageViewport.jsx - With weight slider label and aligned layout
+// ImageViewport.jsx - With mouse-drag brightness/contrast controls
 import React, { useState, useRef, useEffect } from "react";
 import ImageProcessor from "../classes/ImageProcessor";
 import "./ImageViewport.css";
@@ -17,8 +17,21 @@ function ImageViewport({
   const [selectedComponent, setSelectedComponent] = useState("magnitude");
   const [isComputingFFT, setIsComputingFFT] = useState(false);
 
-  const [brightness, setBrightness] = useState(0);
-  const [contrast, setContrast] = useState(0);
+  // Separate brightness/contrast for image and FFT component
+  const [imageBrightness, setImageBrightness] = useState(0);
+  const [imageContrast, setImageContrast] = useState(0);
+  const [componentBrightness, setComponentBrightness] = useState(0);
+  const [componentContrast, setComponentContrast] = useState(0);
+
+  // Mouse drag state for image canvas
+  const [isImageDragging, setIsImageDragging] = useState(false);
+  const [imageDragStart, setImageDragStart] = useState({ x: 0, y: 0 });
+  const [imageDragStartValues, setImageDragStartValues] = useState({ brightness: 0, contrast: 0 });
+
+  // Mouse drag state for component canvas
+  const [isComponentDragging, setIsComponentDragging] = useState(false);
+  const [componentDragStart, setComponentDragStart] = useState({ x: 0, y: 0 });
+  const [componentDragStartValues, setComponentDragStartValues] = useState({ brightness: 0, contrast: 0 });
 
   const processorRef = useRef(new ImageProcessor());
   const imageCanvasRef = useRef(null);
@@ -36,8 +49,12 @@ function ImageViewport({
 
       setHasImage(true);
       setImageDimensions({ width: result.width, height: result.height });
-      setBrightness(0);
-      setContrast(0);
+      
+      // Reset all brightness/contrast values
+      setImageBrightness(0);
+      setImageContrast(0);
+      setComponentBrightness(0);
+      setComponentContrast(0);
 
       onImageLoaded(id, processor);
 
@@ -74,6 +91,8 @@ function ImageViewport({
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+    // Apply brightness/contrast to the image
+    processor.setBrightnessContrast(imageBrightness, imageContrast);
     const imageData = processor.getGrayscaleImageData();
     ctx.putImageData(imageData, 0, 0);
   };
@@ -89,7 +108,12 @@ function ImageViewport({
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    const componentData = processor.getFFTComponent(selectedComponent);
+    // Get component data with brightness/contrast adjustments
+    const componentData = processor.getFFTComponentWithAdjustments(
+      selectedComponent,
+      componentBrightness,
+      componentContrast
+    );
 
     if (!componentData) return;
 
@@ -153,40 +177,120 @@ function ImageViewport({
 
   const handleComponentChange = (event) => {
     setSelectedComponent(event.target.value);
+    // Reset component brightness/contrast when switching components
+    setComponentBrightness(0);
+    setComponentContrast(0);
     if (processor.hasFFT()) {
       drawComponent();
     }
   };
 
-  const handleBrightnessChange = (e) => {
-    const value = parseInt(e.target.value);
-    setBrightness(value);
-    processor.setBrightnessContrast(value, contrast);
+  // ==================== IMAGE CANVAS MOUSE HANDLERS ====================
+  
+  const handleImageMouseDown = (e) => {
+    if (!hasImage) return;
+    
+    setIsImageDragging(true);
+    setImageDragStart({ x: e.clientX, y: e.clientY });
+    setImageDragStartValues({ 
+      brightness: imageBrightness, 
+      contrast: imageContrast 
+    });
+    
+    e.preventDefault();
+  };
+
+  const handleImageMouseMove = (e) => {
+    if (!isImageDragging) return;
+
+    const deltaX = e.clientX - imageDragStart.x;
+    const deltaY = e.clientY - imageDragStart.y;
+
+    // Left/Right = Contrast (sensitivity: 0.5 per pixel)
+    const newContrast = Math.max(-100, Math.min(100, 
+      imageDragStartValues.contrast + deltaX * 0.5
+    ));
+
+    // Up/Down = Brightness (sensitivity: 0.5 per pixel, inverted)
+    const newBrightness = Math.max(-100, Math.min(100, 
+      imageDragStartValues.brightness - deltaY * 0.5
+    ));
+
+    setImageContrast(newContrast);
+    setImageBrightness(newBrightness);
+    
     drawImage();
   };
 
-  const handleContrastChange = (e) => {
-    const value = parseInt(e.target.value);
-    setContrast(value);
-    processor.setBrightnessContrast(brightness, value);
-    drawImage();
+  const handleImageMouseUp = () => {
+    setIsImageDragging(false);
   };
 
+  // ==================== COMPONENT CANVAS MOUSE HANDLERS ====================
+  
+  const handleComponentMouseDown = (e) => {
+    if (!processor.hasFFT()) return;
+    
+    setIsComponentDragging(true);
+    setComponentDragStart({ x: e.clientX, y: e.clientY });
+    setComponentDragStartValues({ 
+      brightness: componentBrightness, 
+      contrast: componentContrast 
+    });
+    
+    e.preventDefault();
+  };
+
+  const handleComponentMouseMove = (e) => {
+    if (!isComponentDragging) return;
+
+    const deltaX = e.clientX - componentDragStart.x;
+    const deltaY = e.clientY - componentDragStart.y;
+
+    // Left/Right = Contrast
+    const newContrast = Math.max(-100, Math.min(100, 
+      componentDragStartValues.contrast + deltaX * 0.5
+    ));
+
+    // Up/Down = Brightness (inverted)
+    const newBrightness = Math.max(-100, Math.min(100, 
+      componentDragStartValues.brightness - deltaY * 0.5
+    ));
+
+    setComponentContrast(newContrast);
+    setComponentBrightness(newBrightness);
+    
+    drawComponent();
+  };
+
+  const handleComponentMouseUp = () => {
+    setIsComponentDragging(false);
+  };
+
+  // Global mouse up handler
+  useEffect(() => {
+    const handleGlobalMouseUp = () => {
+      setIsImageDragging(false);
+      setIsComponentDragging(false);
+    };
+
+    window.addEventListener('mouseup', handleGlobalMouseUp);
+    return () => window.removeEventListener('mouseup', handleGlobalMouseUp);
+  }, []);
+
+  // Handle reset
   const handleReset = () => {
-    setBrightness(0);
-    setContrast(0);
+    setImageBrightness(0);
+    setImageContrast(0);
+    setComponentBrightness(0);
+    setComponentContrast(0);
+    
     processor.setBrightnessContrast(0, 0);
     drawImage();
-  };
-
-  const getBrightnessGradient = () => {
-    const percent = ((brightness + 100) / 200) * 100;
-    return `linear-gradient(to right, #667eea 0%, #764ba2 ${percent}%, #e0e0e0 ${percent}%, #e0e0e0 100%)`;
-  };
-
-  const getContrastGradient = () => {
-    const percent = ((contrast + 100) / 200) * 100;
-    return `linear-gradient(to right, #667eea 0%, #764ba2 ${percent}%, #e0e0e0 ${percent}%, #e0e0e0 100%)`;
+    
+    if (processor.hasFFT()) {
+      drawComponent();
+    }
   };
 
   useEffect(() => {
@@ -199,8 +303,11 @@ function ImageViewport({
     if (targetSize && processor.hasImage()) {
       processor.resize(targetSize.width, targetSize.height);
 
-      setBrightness(0);
-      setContrast(0);
+      // Reset all adjustments on resize
+      setImageBrightness(0);
+      setImageContrast(0);
+      setComponentBrightness(0);
+      setComponentContrast(0);
 
       drawImage();
 
@@ -213,6 +320,9 @@ function ImageViewport({
   const handleDoubleClick = () => {
     fileInputRef.current.click();
   };
+
+  const hasAnyAdjustments = imageBrightness !== 0 || imageContrast !== 0 || 
+                            componentBrightness !== 0 || componentContrast !== 0;
 
   return (
     <div className="image-viewport">
@@ -254,9 +364,11 @@ function ImageViewport({
           )}
 
           <div
-            className="canvas-container"
+            className={`canvas-container ${isImageDragging ? 'dragging' : ''}`}
             onDoubleClick={handleDoubleClick}
-            title="Double-click to change image"
+            onMouseDown={handleImageMouseDown}
+            onMouseMove={handleImageMouseMove}
+            title="Double-click to change image | Drag to adjust brightness/contrast"
           >
             {!hasImage && (
               <div className="placeholder">
@@ -264,26 +376,20 @@ function ImageViewport({
               </div>
             )}
             <canvas ref={imageCanvasRef} />
+            
+            {/* Brightness/Contrast Indicator for Image */}
+            {hasImage && (imageBrightness !== 0 || imageContrast !== 0) && (
+              <div className="bc-indicator">
+                <span>B: {Math.round(imageBrightness)}</span>
+                <span>C: {Math.round(imageContrast)}</span>
+              </div>
+            )}
           </div>
 
-          {/* BRIGHTNESS SLIDER */}
+          {/* Instructions */}
           {hasImage && (
-            <div className="slider-control brightness-control">
-              <div className="slider-label">
-                <span className="slider-name">BRIGHTNESS:</span>
-                <span className="slider-value">{brightness}</span>
-              </div>
-              <input
-                type="range"
-                min="-100"
-                max="100"
-                value={brightness}
-                onChange={handleBrightnessChange}
-                className="slider"
-                style={{
-                  background: getBrightnessGradient(),
-                }}
-              />
+            <div className="drag-instructions">
+              <span>🖱️ Drag: ↕️ Brightness | ↔️ Contrast</span>
             </div>
           )}
         </div>
@@ -315,7 +421,12 @@ function ImageViewport({
             <div style={{ height: "46px" }}></div>
           )}
 
-          <div className="canvas-container component-canvas">
+          <div 
+            className={`canvas-container component-canvas ${isComponentDragging ? 'dragging' : ''}`}
+            onMouseDown={handleComponentMouseDown}
+            onMouseMove={handleComponentMouseMove}
+            title="Drag to adjust brightness/contrast"
+          >
             {!processor.hasFFT() && hasImage && (
               <div className="placeholder">
                 {isComputingFFT ? (
@@ -331,26 +442,20 @@ function ImageViewport({
               </div>
             )}
             <canvas ref={componentCanvasRef} />
+            
+            {/* Brightness/Contrast Indicator for Component */}
+            {processor.hasFFT() && (componentBrightness !== 0 || componentContrast !== 0) && (
+              <div className="bc-indicator">
+                <span>B: {Math.round(componentBrightness)}</span>
+                <span>C: {Math.round(componentContrast)}</span>
+              </div>
+            )}
           </div>
 
-          {/* CONTRAST SLIDER */}
-          {hasImage && (
-            <div className="slider-control contrast-control">
-              <div className="slider-label">
-                <span className="slider-name">CONTRAST:</span>
-                <span className="slider-value">{contrast}</span>
-              </div>
-              <input
-                type="range"
-                min="-100"
-                max="100"
-                value={contrast}
-                onChange={handleContrastChange}
-                className="slider"
-                style={{
-                  background: getContrastGradient(),
-                }}
-              />
+          {/* Instructions */}
+          {processor.hasFFT() && (
+            <div className="drag-instructions">
+              <span>🖱️ Drag: ↕️ Brightness | ↔️ Contrast</span>
             </div>
           )}
 
@@ -366,14 +471,14 @@ function ImageViewport({
       </div>
 
       {/* RESET BUTTON */}
-      {hasImage && (brightness !== 0 || contrast !== 0) && (
+      {hasImage && hasAnyAdjustments && (
         <div className="reset-container">
           <button
             className="reset-button"
             onClick={handleReset}
-            title="Reset brightness and contrast to default"
+            title="Reset all brightness and contrast adjustments"
           >
-            RESET CONTROLS
+            RESET ALL ADJUSTMENTS
           </button>
         </div>
       )}
