@@ -1,30 +1,41 @@
-// App.js - Removed Component Mixer section
+// App.js - Main React Application File
+// Manages input images, output viewports, region configuration, and auto-mixing logic
+
 import React, { useState, useEffect } from 'react';
-import ImageViewport from './components/ImageViewport';
-import OutputViewport from './components/OutputViewport';
-import FourierMixer from './classes/FourierMixer';
+import ImageViewport from './components/ImageViewport'; // Component for individual input image
+import OutputViewport from './components/OutputViewport'; // Component to display outputs
+import FourierMixer from './classes/FourierMixer'; // Class that handles FFT-based image mixing
 import './App.css';
 
 function App() {
+  // State to store loaded images and their processors
   const [loadedImages, setLoadedImages] = useState({});
+
+  // State for unified target size for all images
   const [targetSize, setTargetSize] = useState(null);
+
+  // States for output images of Port 1 and Port 2
   const [outputData1, setOutputData1] = useState(null);
   const [outputData2, setOutputData2] = useState(null);
+
+  // Currently selected output port (1 or 2)
   const [selectedOutput, setSelectedOutput] = useState(1);
+
+  // Trigger to force re-render or update
   const [updateTrigger, setUpdateTrigger] = useState(0);
   
-  // Initialize with default region config (disabled)
+  // Initialize region configuration (disabled by default)
   const [regionConfig, setRegionConfig] = useState({
     enabled: false,
-    type: 'inner',
+    type: 'inner', // inner or outer region
     size: 50
   });
   
   // Right sidebar controls
-  const [mixMode, setMixMode] = useState('magnitude-phase');
-  const [regionType, setRegionType] = useState('inner');
+  const [mixMode, setMixMode] = useState('magnitude-phase'); // Mixing mode: magnitude/phase or real/imaginary
+  const [regionType, setRegionType] = useState('inner'); // Region type selection for filter
   
-  // Weight management
+  // Weight management for each input image
   const [weights, setWeights] = useState([0.25, 0.25, 0.25, 0.25]);
 
   // Sync regionType changes with regionConfig
@@ -35,6 +46,7 @@ function App() {
     }));
   }, [regionType]);
 
+  // Called when an image is loaded in a viewport
   const handleImageLoaded = (viewportId, processor) => {
     const newLoadedImages = {
       ...loadedImages,
@@ -44,11 +56,13 @@ function App() {
     setLoadedImages(newLoadedImages);
     updateTargetSize(newLoadedImages);
     
+    // Trigger update after a short delay
     setTimeout(() => {
       setUpdateTrigger(prev => prev + 1);
     }, 500);
   };
 
+  // Determine minimum width and height across all loaded images for unified size
   const updateTargetSize = (images) => {
     const processors = Object.values(images);
     
@@ -65,25 +79,26 @@ function App() {
     setTargetSize({ width: minWidth, height: minHeight });
   };
 
+  // Update region configuration and trigger auto-mixing
   const handleRegionConfigChange = (config) => {
     console.log('App: Region config updated:', config);
     setRegionConfig(config);
-    // Trigger auto-mix when region config changes
     autoMix();
   };
 
+  // Update weight of a specific viewport and trigger auto-mixing
   const handleWeightChange = (viewportId, newWeight) => {
     const index = parseInt(viewportId) - 1;
     const newWeights = [...weights];
     newWeights[index] = newWeight;
     setWeights(newWeights);
     console.log(`Weight changed for Image ${viewportId}: ${newWeight}%`);
-    // Trigger auto-mix when weights change
     setTimeout(() => autoMix(), 100);
   };
 
-  // Auto-mix function to handle mixing when settings change
+  // Auto-mix function using FourierMixer
   const autoMix = () => {
+    // Get all loaded processors that have FFT computed
     const processors = getProcessorsArray().filter(p => p && p.hasFFT());
     if (processors.length === 0) return;
 
@@ -101,6 +116,7 @@ function App() {
       mixer.setMixMode(mixMode);
       mixer.setRegionConfig(regionConfig);
 
+      // Perform mixing
       const result = mixer.mix();
       
       console.log('Mix result:', {
@@ -110,6 +126,7 @@ function App() {
         targetOutput: selectedOutput
       });
 
+      // Assign result to selected output port
       if (selectedOutput === 1) {
         setOutputData1(result);
         console.log('✅ Output set to Port 1');
@@ -123,11 +140,12 @@ function App() {
     }
   };
 
-  // Auto-mix when weights, mixMode, or regionConfig change
+  // Auto-mix whenever weights, mixMode, regionConfig, or selectedOutput change
   useEffect(() => {
     autoMix();
   }, [weights, mixMode, regionConfig, selectedOutput]);
 
+  // Helper function to return processors array in order
   const getProcessorsArray = () => {
     return [
       loadedImages['1'] || null,
@@ -139,12 +157,13 @@ function App() {
 
   return (
     <div className="app">
+      {/* App Header */}
       <header className="app-header">
         <h1>🎨 Fourier Transform Mixer</h1>
       </header>
 
       <main className="main-content-new">
-        {/* Left: Input Images */}
+        {/* Left Section: Input Image Viewports */}
         <section className="left-section">
           <div className="viewports-grid">
             <ImageViewport 
@@ -185,6 +204,7 @@ function App() {
             />
           </div>
 
+          {/* Display unified target size info */}
           {targetSize && (
             <div className="info-box">
               <strong>Unified Size:</strong> {targetSize.width} x {targetSize.height}
@@ -192,7 +212,7 @@ function App() {
           )}
         </section>
 
-        {/* Right: Output Viewport with Controls */}
+        {/* Right Section: Output Viewport with controls */}
         <aside className="right-section">
           <OutputViewport 
             outputData1={outputData1}
