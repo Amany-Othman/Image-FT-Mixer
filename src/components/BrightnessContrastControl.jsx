@@ -1,30 +1,38 @@
 import React, { useState, useEffect } from "react";
 
+// Component to control Brightness and Contrast via sliders
 function BrightnessContrastControl({ onAdjust, brightness = 0, contrast = 0 }) {
+  // Local state for brightness and contrast
   const [currentBrightness, setCurrentBrightness] = useState(brightness);
   const [currentContrast, setCurrentContrast] = useState(contrast);
 
+  // Update local state when props change
   useEffect(() => {
     setCurrentBrightness(brightness);
     setCurrentContrast(contrast);
   }, [brightness, contrast]);
 
+  // Handle changes in the Brightness slider
   const handleBrightnessChange = (e) => {
     const value = parseInt(e.target.value);
     setCurrentBrightness(value);
+    // Call parent callback with new brightness and current contrast
     if (onAdjust) {
       onAdjust(value, currentContrast);
     }
   };
 
+  // Handle changes in the Contrast slider
   const handleContrastChange = (e) => {
     const value = parseInt(e.target.value);
     setCurrentContrast(value);
+    // Call parent callback with current brightness and new contrast
     if (onAdjust) {
       onAdjust(currentBrightness, value);
     }
   };
 
+  // Reset sliders to default values (0)
   const handleReset = () => {
     setCurrentBrightness(0);
     setCurrentContrast(0);
@@ -33,12 +41,14 @@ function BrightnessContrastControl({ onAdjust, brightness = 0, contrast = 0 }) {
     }
   };
 
-  // FIXED: Calculate gradient that stops exactly at the thumb position
+  // Calculate gradient for Brightness slider background
+  // Gradient stops exactly at the thumb position
   const getBrightnessGradient = () => {
     const percent = ((currentBrightness + 100) / 200) * 100;
     return `linear-gradient(to right, #667eea 0%, #764ba2 ${percent}%, #e0e0e0 ${percent}%, #e0e0e0 100%)`;
   };
 
+  // Calculate gradient for Contrast slider background
   const getContrastGradient = () => {
     const percent = ((currentContrast + 100) / 200) * 100;
     return `linear-gradient(to right, #667eea 0%, #764ba2 ${percent}%, #e0e0e0 ${percent}%, #e0e0e0 100%)`;
@@ -63,7 +73,7 @@ function BrightnessContrastControl({ onAdjust, brightness = 0, contrast = 0 }) {
             onChange={handleBrightnessChange}
             style={{
               ...styles.slider,
-              background: getBrightnessGradient(),
+              background: getBrightnessGradient(), // Apply gradient
             }}
           />
         </div>
@@ -84,16 +94,17 @@ function BrightnessContrastControl({ onAdjust, brightness = 0, contrast = 0 }) {
             onChange={handleContrastChange}
             style={{
               ...styles.slider,
-              background: getContrastGradient(),
+              background: getContrastGradient(), // Apply gradient
             }}
           />
         </div>
       </div>
 
-      {/* Reset Button - Always visible for better UX */}
+      {/* Reset Button - always visible for better UX */}
       <button
         style={{
           ...styles.resetButton,
+          // Reduce opacity when already at default values
           opacity: currentBrightness !== 0 || currentContrast !== 0 ? 1 : 0.5,
         }}
         onClick={handleReset}
@@ -106,6 +117,7 @@ function BrightnessContrastControl({ onAdjust, brightness = 0, contrast = 0 }) {
   );
 }
 
+// Inline styles for the sliders and container
 const styles = {
   container: {
     marginTop: "10px",
@@ -176,11 +188,12 @@ const styles = {
   },
 };
 
-// Demo component
+// Demo component to test BrightnessContrastControl
 export default function Demo() {
   const [brightness, setBrightness] = useState(0);
   const [contrast, setContrast] = useState(0);
 
+  // Callback to update current brightness/contrast values
   const handleAdjust = (b, c) => {
     setBrightness(b);
     setContrast(c);
@@ -195,12 +208,15 @@ export default function Demo() {
         ✅ Gradient now stops exactly at the thumb position
         <br />✅ Reset button always visible for better UX
       </p>
+
+      {/* Brightness/Contrast sliders */}
       <BrightnessContrastControl
         brightness={brightness}
         contrast={contrast}
         onAdjust={handleAdjust}
       />
 
+      {/* Display current values below sliders */}
       <div
         style={{
           marginTop: "30px",
@@ -216,6 +232,7 @@ export default function Demo() {
         <p style={{ margin: "5px 0" }}>Contrast: {contrast}</p>
       </div>
 
+      {/* Custom CSS for sliders and buttons */}
       <style>{`
         input[type="range"]::-webkit-slider-thumb {
           -webkit-appearance: none;
